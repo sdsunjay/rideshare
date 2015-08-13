@@ -61,5 +61,6 @@ target/
 composer.json
 composer.lock
 config.php
+configPy.py
 
 vendor/
