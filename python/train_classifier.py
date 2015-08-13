@@ -45,8 +45,6 @@ class myTrieClass          (object):
 	 else:
 	    return 3
 	    # Move on to next word
-class Locations:
-       Places, Cities, Counties, States = range(4)
 
 def lemmaText(text):
 	words = word_tokenize(text)
@@ -79,15 +77,6 @@ def checkForCitiesWithTrie(con,sentence):
       i+=1
    print 'Cleaned: '+string
 
-# a location have been found
-def insertNewPostIntoLocationTable(con,post_id,post,place_id,location_num,location):
-   query="INSERT post_id,post,place_id INTO clean_post_locations "
-   cursor = con.cursor()
-   add_employee = ("INSERT INTO clean_locations_posts (pid, post, location_id,location_num,table_id) VALUES (%s, %s, %s, %s, %s)")
-   data_employee = (post_id,post,place_id,location_num,location)
-#Insert new employee
-   cursor.execute(add_employee, data_employee)
-		  
 #check if sentence contains city
 def checkForCities(con,sentence):
 	    cur = con.cursor()
@@ -127,13 +116,13 @@ def getText():
 	with con:
 
 	    cur = con.cursor()
-	    cur.execute("SELECT O.post,C.post FROM clean_posts C,posts O")
-	    #cur.execute("SELECT pid,post FROM clean_posts")
+	    #cur.execute("SELECT O.post,C.post FROM clean_posts C,posts O")
+	    cur.execute("SELECT pid,post FROM clean_posts")
 	    #cur.execute("SELECT post FROM posts")
 
 	    for i in range(cur.rowcount):
 		row = cur.fetchone()	
-		print "Original text: "+row[0]+"\n"+"Cleaned text: "+row[1]
+		#print "Original text: "+row[0]+"\n"+"Cleaned text: "+row[1]
 	        #pass row to another function which determines which "bucket" to put it in
 		# first search for individual city
 		# then search for county
