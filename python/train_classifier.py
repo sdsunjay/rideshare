@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #used in stemText()
+from mdict import createHashmap, removeCities
+from configPy import configPy
 import nltk
 from nltk.stem import PorterStemmer
 from nltk.tokenize import word_tokenize
@@ -18,7 +20,7 @@ class myTrieClass          (object):
 
    def __init__(self):
       #self.con = con
-      self.con = mdb.connect(HOST,USERNAME,PASSWORD,DATABASE_NAME)
+      self.con = mdb.connect(configPy.HOST,configPy.USERNAME,configPy.PASSWORD,configPy.DATABASE_NAME)
       self.trie = None
    def makeTrie(self):
       L = []
@@ -98,7 +100,7 @@ def checkForCities(con,sentence):
 
 # get text from clean_posts
 def getText():
-	con = mdb.connect(HOST,USERNAME,PASSWORD,DATABASE_NAME)
+        con = mdb.connect(configPy.HOST,configPy.USERNAME,configPy.PASSWORD,configPy.DATABASE_NAME)
 	list=["sgv","sfv","sj","sf","la","slo","sb","sac","oc","lb","sd","southbay","eastbay","northbay","southbayarea","eastbayarea","northbayarea","bayarea","sfo","lax","sjc","sba","sbp","calpoly"];
         abbrev_set = frozenset(list)
         all_words = []
@@ -112,17 +114,21 @@ def getText():
         #$str = str_replace("sd",'san diego',$str);
         #$str = str_replace("sb",'santa barbara',$str);
         #$str = str_replace("lb",'long beach',$str);
-
+	 
 	with con:
 
 	    cur = con.cursor()
-	    #cur.execute("SELECT O.post,C.post FROM clean_posts C,posts O")
+	    createHashmap(con)
+	 
+	    #temp = hashmapList(con)
+	 	#cur.execute("SELECT O.post,C.post FROM clean_posts C,posts O")
 	    cur.execute("SELECT pid,post FROM clean_posts")
 	    #cur.execute("SELECT post FROM posts")
 
 	    for i in range(cur.rowcount):
 		row = cur.fetchone()	
-		#print "Original text: "+row[0]+"\n"+"Cleaned text: "+row[1]
+	       	removeCities(con,row[0],row[1])
+	       #print "Original text: "+row[0]+"\n"+"Cleaned text: "+row[1]
 	        #pass row to another function which determines which "bucket" to put it in
 		# first search for individual city
 		# then search for county
