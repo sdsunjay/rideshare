@@ -69,11 +69,14 @@ def removeCities(con,post_id,post):
    i = 0
    finalString = ''
    words = post.split()
-   city_num = 0 
+   city_num = 0
+   temp = -1 
    for i in range(0,len(words)):
       if words[i] in hashmapList[num]:
 #	 print 'Exists!'
-	 temp =  hashmapList[num][words[i]]
+	 # print "Original: "+words[i]+"\n"
+         temp =  hashmapList[num][words[i]]
+	 #print str(temp)+"\n"
 	 # if not ending word
 	 if temp == 1:
 	    num+=1
@@ -81,16 +84,17 @@ def removeCities(con,post_id,post):
 	 elif temp >= 1:
 	    city_num+=1
 	    finalString+='LOCATION '
-	    print "Replace city in "+str(city_num)+" location"+"\n"+"String so far is: "+finalString
-	    #insertNewPostIntoLocationTable(con,str(post_id),finalString,str(temp),str(city_num),str(Locations.Cities))
+	   # print "Replace city in "+str(city_num)+" location"+"\n"+"String so far is: "+finalString
+	    insertNewPostIntoLocationTable(con,str(post_id),finalString,str(temp),str(city_num),str(Locations.Cities))
 	    num = 0
       else:
+	 num = 0
 	 finalString+=words[i]+' '
-   print "Final String: "+finalString
+  # print "Final String: "+finalString
 #   update clean_locations_posts set post=finalString where pid=post_id
-  # cursor = con.cursor()
-  # cursor.execute ("""
-#	    UPDATE clean_locations_posts
-#	       SET post=%s
-#		  WHERE pid=%s
-#		  """, (finalString, str(post_id)))
+  cursor = con.cursor()
+  cursor.execute ("""
+	    UPDATE clean_locations_posts
+	       SET post=%s
+		  WHERE pid=%s
+		  """, (finalString, str(post_id)))
