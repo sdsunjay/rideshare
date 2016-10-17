@@ -21,19 +21,21 @@ function outputToFile($myfile,$text)
    fwrite($myfile,"\n\n"); 
 }
 
-function outputToScreen($name,$post_id,$text,$link,$created_time,$updated_time)
+function outputToScreen($post_number, $post_id,$message)
 {
-   //echo '<br>';
-   $name = cleanName($name);
-   echo 'Name: '.$name;
+   //echo $post_number . '.'; 
    //echo '<br>';
    //echo 'ID: ' . $post_id;
-   echo '<br>';
-   $text = strip_tags($text);
-   echo 'Original text: '.$text;
-   echo '<br>';
-   $text = cleanPost($text);
-   echo 'Cleaned text: '.$text;
+   //echo '<br>';
+   $message = strip_tags($message);
+   //echo 'Original text: ' . $message;
+   //echo '<br>';
+   $message = cleanPost($message);
+   //echo 'Cleaned text: ' . $message;
+   echo $message;
+ //  echo '<br>';
+  // echo "Posted at: " . $created_time;
+  // echo '<br>';
    echo '<br>';
    /*echo '<br>';
      echo "Link: ".$link;
@@ -90,63 +92,42 @@ function handlePrevious($previous_url)
    return NULL;
 }
 
-function emptyElementExists($arr) 
-{
-   return array_search("", $arr) !== false;
-}
 
-function storePostInDB($data,$mysqli)
+function storePostInDB($post_id, $message, $created_time, $mysqli)
 {
-   if(emptyElementExists($data))
-   {
-      echo "Empty element exists in data <br>";
-      print_r($data);
+   
+   /*
+   $query_string = "CREATE TABLE IF NOT EXISTS POSTS (id VARCHAR(100) PRIMARY KEY, message text NOT NULL, created_time DATETIME NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)";
+   
+   if (mysqli_query($mysqli, $query_string)) {
+       echo "Table POSTS created successfully";
+   } else {
+       echo "Error creating table: " . mysqli_error($mysqli);
+   }
+   */
+   //echo $post_id . '<br>';
+  // echo $message . '<br>';
+   //echo $created_time . '<br>';
+   $query_string="INSERT IGNORE INTO POSTS(id,message,created_time) VALUES (?,?,?)"; 
+
+   /* Prepared statement, stage 1: prepare */
+   if (!($stmt = $mysqli->prepare($query_string))) {
+      echo "Prepare failed: (" . $mysqli->errno . ") " . $mysqli->error;
       return false;
    }
-   /*	$user_name = $data[0];
-	$post_id = $data[1];
-	$post = $data[2];
-	$link = $data[3];
-	$created_time = $data[4];
-	$updated_time = $data[5];
-    */
-   $parts = explode(" ", $data[0]);
-   $last_name = $parts[1];
-   $first_name = $parts[0];
-   $first_name = cleanName($first_name);
-   $last_name = cleanName($last_name);
+   
+   /* Prepared statement, stage 2: bind */
+   if (!$stmt->bind_param("sss",$post_id, $message, $created_time)){	
+      echo "Binding parameters failed: (" . $stmt->errno . ") " . $stmt->error;
+      return false;
+   }	
 
-   // NO LONGER storing users as difficult to deduplicate
-   // CREATE TABLE users (user_id BIGINT UNSIGNED NOT NULL PRIMARY KEY, first_name VARCHAR(50) NOT NULL, last_name VARCHAR(50) NOT NULL, email VARCHAR(50), BIRTHDATE DATETIME, gender VARCHAR(20), hometown VARCHAR(100), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
-   /*
-      $query_string="INSERT IGNORE INTO users(firstname,lastname) VALUES (?,?,?)"; 
-      $stmt= $mysqli->prepare($query_string);
-
-      $stmt->bind_param('ss',$first_name,$last_name);
-   // Execute the prepared query.
-   if ($stmt->execute()) 
-   {
-   $stmt->close();
-   //return true;
+   /* Prepared statement, stage 3: execute */
+   if (!$stmt->execute()) {
+      echo "Execute failed: (" . $stmt->errno . ") " . $stmt->error;
+      return false;
    }
    else
-   {
-   return false;
-   }*/
-   //Table only needs to be created once
-   //CREATE TABLE posts (id BIGINT UNSIGNED NOT NULL PRIMARY KEY, first_name VARCHAR(100) NOT NULL, last_name VARCHAR(100) NOT NULL, post text NOT NULL, link VARCHAR(2084) NOT NULL, created_time DATETIME NOT NULL, updated_time DATETIME NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
-   /*
-      $post_id = $data[1];
-      $post = $data[2];
-      $link = $data[3];
-      $created_time = $data[4];
-      $updated_time = $data[5];
-    */
-   $query_string="INSERT IGNORE INTO posts(id,first_name,last_name,post,link,created_time,updated_time) VALUES (?,?,?,?,?,?,?)"; 
-   $stmt= $mysqli->prepare($query_string);
-   $stmt->bind_param('sssssss',$data[1],$first_name,$last_name,$data[2],$data[3],$data[4],$data[5]);
-   // Execute the prepared query.
-   if ($stmt->execute()) 
    {
       $stmt->close();
       if ($mysqli->warning_count)
@@ -159,75 +140,55 @@ function storePostInDB($data,$mysqli)
 	 }
       }
    }
-   else
-   {
-      echo "ERROR in inserting into post table";
-      return false;
-   }
-
+   echo "Successfully inserted. <br>";
    return true;
 
 }
-
-function parseUsersResponse($as,$outputToScreenFlag,$outputToFileFlag,$myfile,$outputToDBFlag)
+function getMoreInfo($fb, $post_id)
 {
-   //	print_r($as);
-   /*	foreach($as as $data): 
 
-	$id = get_object_vars($as["data"][$i]); 
-   //DO NOT DELETE, this is useful for debugging
-   print_r($id);
-   $i++;	
-   //echo '<br>';
-   //print_r($as);
-   endforeach;
-    */
+   $requestString = '/' . $post_id;
+   $request = $fb->request('GET', $requestString);
+   $response = $fb->getClient()->sendRequest($request);
+   $graphObject = $response->getGraphObject();
+   echo $graphObject;
+   echo '<br>';
+   echo '<br>';
 }
-function parsePostsResponse($as,$outputToScreenFlag,$outputToFileFlag,$myfile,$mysqli,$outputToDBFlag)
-{
-   $i = 0;
-   foreach($as["data"] as $data): 
 
-      $id = get_object_vars($as["data"][$i]); 
+
+function parsePost($fb, $postCount, $post,$outputToScreenFlag,$outputToFileFlag,$myfile,$mysqli,$outputToDBFlag)
+{
+
+   $post_id = $post["id"];
+   //getMoreInfo($fb, $post_id); 
+   $message = $post["message"]; 
+   $updated_time = $post["updated_time"];
+   $created_time = $updated_time->format('Y-m-d H:i:s');
+
    //DO NOT DELETE, this is useful for debugging
    //print_r($id);
-   $from = get_object_vars($id["from"]);
-   $created_time = $id["created_time"];
-   $updated_time = $id["updated_time"];
-   $post_id = $from["id"];
-   $name = $from["name"]; 
-   $text = $id["message"]; 
-   $lin = get_object_vars($id["actions"][0]);
-   $link = $lin["link"];
 
-   $dTime = strtotime($created_time);
-   $created_time = date("Y-m-d H:i:s",$dTime);
-   $dTime = strtotime($updated_time);
-   $updated_time = date("Y-m-d H:i:s",$dTime);
+   if($outputToScreenFlag)
+   {	
+      outputToScreen($postCount, $post_id, $message, $created_time);
+   }
    if($outputToFileFlag)
    {
       outputToFile($myfile,$text);
    }
-   if($outputToScreenFlag)
-   {	
-      outputToScreen($name,$post_id,$text,$link,$created_time,$updated_time);
-   }
    if($outputToDBFlag)
    {
-      $array = array($name,$post_id,$text,$link,$created_time,$updated_time);
-      if(storePostInDB($array,$mysqli) == false)
+      if(storePostInDB($post_id, $message, $created_time, $mysqli) == false)
       {
 	 echo "<br>Unable to store item in DB<br>";
 	 //throw new Exception('unable to store in DB');
       }
    }
-   $i++;
-   //echo '<br>';
-   //print_r($as);
-   endforeach;
+
 }
 
-function handlePostsRequest($session,$requestString,$myfile,$mysqli,$outputToFileFlag,$outputToScreenFlag,$outputToDBFlag)
+function handlePostsRequest($fb, $requestString,$myfile,$mysqli,$outputToFileFlag,$outputToScreenFlag,$outputToDBFlag)
 {
 
 
@@ -236,91 +197,41 @@ function handlePostsRequest($session,$requestString,$myfile,$mysqli,$outputToFil
    //  $accessToken = $session->getAccessToken();
    // Exchange the short-lived token for a long-lived token.
    // $longLivedAccessToken = $accessToken->extend();	
+   /* PHP SDK v5.0.0 */
+   /* make the API call */
    try {
-      // with this session I will post a message to my own timeline
-      /*	$request = new FacebookRequest(
-		$session,
-		'POST',
-		'/me/feed',
-		array('link' => 'www.google.com','message' => 'this is a test'));*/
-      //$requestString='/GROUP_ID/feed?limit=2&since='.$since.'&until='.$until;
-      //$requestString='/GROUP_ID/feed?limit=2';
-      $request = new FacebookRequest($session,'GET',$requestString);
-      //$request = new FacebookRequest($session,'POST',$requestString,array("method"=>"GET"));
+      $request = $fb->request('GET', $requestString);
+      $response = $fb->getClient()->sendRequest($request);
+      $pagesEdge = $response->getGraphEdge();
+      $pageCount = 0;
+      $postCount = 0;
 
-
-      $counter = 0;
-      //many many thanks to https://stackoverflow.com/questions/28230895/how-to-use-paging-next-in-the-new-facebook-php-sdk-4 for the code below	
       do {
-	 //loop through each page, we only get 100 posts per page
-	 $response = $request->execute();
-	 $graphObject = $response->getGraphObject(GraphUser::className());
-	 $data = $graphObject->asArray();
-	 parsePostsResponse($data,$outputToScreenFlag,$outputToFileFlag,$myfile,$mysqli,$outputToDBFlag);
-	 $counter+=100;
-      } while ($request = $response->getRequestForNextPage());
-      echo 'Got '.$counter.' posts. <br>';
-   } catch ( FacebookRequestException $e ) {
-      echo "Exception occured, code: " . $e->getCode();
-      // show any error for this facebook request
-      echo 'Facebook (post/get) request error: '.$e->getMessage();
-   }
-   catch(Exception $ex) {
-      // When validation fails or other local issues
-      echo "Unknown error! : (";
+	 //	 echo '<h1>Page #' . $pageCount . ':</h1>' . "\n\n";
+	 // Iterate over all the GraphNode's returned from the edge
+	 foreach ($pagesEdge as $page) {
+	    $post_data = $page->asArray();
+	    parsePost($fb, $postCount, $post_data,$outputToScreenFlag,$outputToFileFlag,$myfile,$mysqli,$outputToDBFlag);
+	    $postCount++;
+	    //var_dump($post_data);
+	 }
+	 $pageCount++;
+	 // Get the next page of results
+      }while ($pagesEdge = $fb->next($pagesEdge));
 
+   } catch(Facebook\Exceptions\FacebookResponseException $e) {
+      // When Graph returns an error
+      echo 'Graph returned an error: ' . $e->getMessage();
+      //exit;
+   } catch(Facebook\Exceptions\FacebookSDKException $e) {
+      // When validation fails or other local issues
+      echo 'Facebook SDK returned an error: ' . $e->getMessage();
+      //exit;
    }
-   
+
    return true;
 }
-function initUserRequest($session,$groupID,$outputToScreenFlag,$outputToFileFlag,$outputToDBFlag)
-{
-   try {
-      $request = new FacebookRequest($session,'GET',$requestString);
-
-
-      //many many thanks to https://stackoverflow.com/questions/28230895/how-to-use-paging-next-in-the-new-facebook-php-sdk-4 for the code below	
-      do {
-	 $response = $request->execute();
-	 $graphObject = $response->getGraphObject(GraphUser::className());
-	 $data = $graphObject->asArray();
-	 print_r($data);
-      } while ($request = $response->getRequestForNextPage());
-   } catch ( FacebookRequestException $e ) {
-      echo "Exception occured, code: " . $e->getCode();
-      // show any error for this facebook request
-      echo 'Facebook (post/get) request error: '.$e->getMessage();
-   }
-   catch(Exception $ex) {
-      // When validation fails or other local issues
-      echo "Unknown error! : (";
-
-   }
-}
-function initUsersRequest($session,$groupID,$outputToScreenFlag,$outputToFileFlag,$outputToDBFlag)
-{
-   $requestString = '/'.$groupID.'/members?limit=100';
-   try {
-      $request = new FacebookRequest($session,'GET',$requestString);
-      do {
-	 $response = $request->execute();
-	 $graphObject = $response->getGraphObject(GraphUser::className());
-	 $data = $graphObject->asArray();
-	 print_r($data);
-	 parseUsersResponse($data,$outputToScreenFlag,$outputToFileFlag,$myfile,$outputToDBFlag);
-      } while ($request = $response->getRequestForNextPage());
-   } catch ( FacebookRequestException $e ) {
-      echo "Exception occured, code: " . $e->getCode();
-      // show any error for this facebook request
-      echo 'Facebook (post/get) request error: '.$e->getMessage();
-   }
-   catch(Exception $ex) {
-      // When validation fails or other local issues
-      echo "Unknown error! : (";
-
-   }
-}
-function initPostsRequest($session,$groupID,$outputToScreenFlag,$outputToFileFlag,$outputToDBFlag)
+function initPostsRequest($fb, $outputToScreenFlag,$outputToFileFlag,$outputToDBFlag)
 {
    //file descriptor
    $myfile = NULL;
@@ -334,8 +245,8 @@ function initPostsRequest($session,$groupID,$outputToScreenFlag,$outputToFileFla
 	 throw new Exception('timestamp is bogus');
       }		
 
-      //get posts from 1 days ago
-      if (($since = strtotime("-1 day")) === false) {
+      //get posts from 30 days ago
+      if (($since = strtotime("-30 day")) === false) {
 	 echo "The string ($str) is bogus";
 	 throw new Exception('timestamp is bogus');
       }
@@ -351,7 +262,7 @@ function initPostsRequest($session,$groupID,$outputToScreenFlag,$outputToFileFla
    }
    if($outputToScreenFlag)
    {
-      echo 'Date: '.date("Y:n:d:H:i:s");
+      echo '<p>Date: '.date("Y:n:d:H:i:s").'</p>';
    }
    if($outputToDBFlag)
    {
@@ -362,8 +273,9 @@ function initPostsRequest($session,$groupID,$outputToScreenFlag,$outputToFileFla
 	 echo "Failed to connect to MySQL: (" . $mysqli->connect_errno . ") " . $mysqli->connect_error;
       }
    }
-   $requestString='/'.$groupID.'/feed?limit=100&since='.$since;
-   if(handlePostsRequest($session,$requestString,$myfile,$mysqli,$outputToFileFlag,$outputToScreenFlag,$outputToDBFlag))
+   //we only get 100 posts per page
+   $requestString='/'. GROUP_ID .'/feed?limit=100&since='.$since;
+   if(handlePostsRequest($fb, $requestString,$myfile,$mysqli,$outputToFileFlag,$outputToScreenFlag,$outputToDBFlag))
    {
       if($outputToFileFlag)
       {
@@ -372,7 +284,7 @@ function initPostsRequest($session,$groupID,$outputToScreenFlag,$outputToFileFla
       }
       if($outputToDBFlag)
       {
-         $mysqli->close();
+	 $mysqli->close();
       }
       return true;
    }
@@ -380,51 +292,37 @@ function initPostsRequest($session,$groupID,$outputToScreenFlag,$outputToFileFla
 
 }
 
-
-
-//Cali
 date_default_timezone_set("America/Los_Angeles");
-//date_default_timezone_set('UTC');
 
-// adapted from
-// https://www.webniraj.com/2014/05/01/facebook-api-php-sdk-updated-to-v4-0-0/
-
-// initialize your app using your key and secret
-FacebookSession::setDefaultApplication(API_KEY, API_SECRET);
-
-// create a helper opject which is needed to create a login URL
-// the REDIRECT_LOGIN_URL is the page a visitor will come to after login
-$helper = new FacebookRedirectLoginHelper(REDIRECT_LOGIN_URL);
-
-// First check if this is an existing PHP session
-if ( isset( $_SESSION ) && isset( $_SESSION['fb_token'] ) ) {
-   // create new session from the existing PHP sesson
-   $session = new FacebookSession( $_SESSION['fb_token'] );
-   try {
-      // validate the access_token to make sure it's still valid
-      if ( !$session->validate() ) 
-	 $session = null;
-   } catch ( Exception $e ) {
-      // catch any exceptions and set the sesson null
-      $session = null;
-      echo 'No session: '.$e->getMessage();
-   }
-}  elseif ( empty( $session ) ) {
-   // the session is empty, we create a new one
-   try {
-      // the visitor is redirected from the login, let's pickup the session
-      $session = $helper->getSessionFromRedirect();
-   } catch( FacebookRequestException $e ) {
-      // Facebook has returned an error
-      echo 'Facebook (session) request error: '.$e->getMessage();
-   } catch( Exception $e ) {
-      // Any other error
-      echo 'Other (session) request error: '.$e->getMessage();
-   }
+if (!session_id()) {
+   session_start();
 }
-//IF WE GOT A SESSION, leggo
-if ( isset( $session ) ) {
 
+$fb = new Facebook\Facebook([
+      'app_id' => APP_ID,
+      'app_secret' => APP_SECRET,
+      'default_graph_version' => 'v2.8',
+]);
+
+
+$helper = $fb->getRedirectLoginHelper();
+try {
+   $accessToken = $helper->getAccessToken();
+} catch(Facebook\Exceptions\FacebookResponseException $e) {
+   // When Graph returns an error
+   echo 'Graph returned an error: ' . $e->getMessage();
+   exit;
+} catch(Facebook\Exceptions\FacebookSDKException $e) {
+   // When validation fails or other local issues
+   echo 'Facebook SDK returned an error: ' . $e->getMessage();
+   exit;
+}
+
+if (isset($_SESSION['facebook_access_token'])) {
+   // Logged in!
+   $_SESSION['facebook_access_token'] = (string) $accessToken;
+   // Sets the default fallback access token so we don't have to pass it to each request
+   $fb->setDefaultAccessToken((string) $accessToken);   
    //do we want to output to a file
    $outputToFileFlag = false;
    //do we want to output to a database
@@ -434,11 +332,11 @@ if ( isset( $session ) ) {
 
 
    try {
-      // store the session token into a PHP session
-      $_SESSION['fb_token'] = $session->getToken();
-      // and create a new Facebook session using the cururent token
-      // or from the new token we got after login
-      $session = new FacebookSession( $session->getToken() );
+
+      if(initPostsRequest($fb, $outputToScreenFlag,$outputToFileFlag,$outputToDBFlag))
+      {
+	 return 0;
+      }
    } catch( FacebookRequestException $e ) {
       // Facebook has returned an error
       echo 'Facebook (session) request error: '.$e->getMessage();
@@ -447,17 +345,9 @@ if ( isset( $session ) ) {
       echo 'Other (session) request error: '.$e->getMessage();
    }
 
-   //	initUserRequest($session,GROUP_ID,$outputToScreenFlag,$outputToFileFlag,$outputToDBFlag);
-   //	initUsersRequest($session,GROUP_ID,$outputToScreenFlag,$outputToFileFlag,$outputToDBFlag);
-   if(initPostsRequest($session,GROUP_ID,$outputToScreenFlag,$outputToFileFlag,$outputToDBFlag))
-   {
-      echo "Success!";
-   }
-} else {
-   // we need to create a new session, provide a login link
-   echo 'No session, please <a href="'. $helper->getLoginUrl( array( 'publish_actions' ) ).'">login</a>.';
+
+   // Now you can redirect to another page and use the
+   // access token from $_SESSION['facebook_access_token']
 }
 
-// use this for testing only
-//unset($_SESSION['fb_token']);
 ?>
