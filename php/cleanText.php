@@ -612,7 +612,8 @@ function removeContractions($str)
    $str = str_replace("how'll",'how will',$str);
    $str = str_replace("how'd",'how would',$str);
 
-
+   $str = str_replace("p.s.",'postscript',$str);
+   
    $str = str_replace("aren't",'are not',$str);
 
    $str = str_replace("couldn't",'could not',$str);
@@ -664,6 +665,7 @@ function removeSlang($str)
    $str = str_replace("haha",'',$str);
    $str = str_replace("idk",'i do not know',$str);
    $str = str_replace("plz",'please',$str);
+   $str = str_replace("pls",'please',$str);
    $str = str_replace("thx",'thanks',$str);
    $str = str_replace("msg",'message',$str);
    $str = str_replace("ya'll",'you all',$str);
@@ -721,6 +723,17 @@ function replaceTo($str)
    $str = str_replace("--", ' to ', $str);
    $str = str_replace("-", ' to ', $str);
 
+   return $str;
+}
+
+function removeHighways($str)
+{
+
+   $str = str_replace("101",'highway',$str);
+   $str = str_replace("405",'highway',$str);
+   $str = str_replace("680",'highway',$str);
+   $str = str_replace("880",'highway',$str);
+   $str = str_replace("80",'highway',$str);
    return $str;
 }
 
@@ -839,6 +852,7 @@ function cleanPost($str)
    $str = replaceTo($str);
    $str = removeContractions($str);
    $str = removeObvious($str);
+   $str = removeHighways($str);
 
    //remove st,rd,nd,th from numbers	
    $str = preg_replace('/\\b(\d+)(?:st|nd|rd|th)\\b/', '$1', $str);
