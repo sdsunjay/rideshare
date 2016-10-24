@@ -10,7 +10,7 @@ allWords = []
 
 
 def cleanText(text):
-    """Clean up the text"""
+    """Clean up the text."""
     return re.sub(r'\s+', ' ', re.sub(r'\W+', " ", text.lower())).strip()
 
 
