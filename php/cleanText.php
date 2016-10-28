@@ -758,9 +758,14 @@ function removeHighways($str)
 function removeUniversityAbbreviations($str)
 {
 
+   //TODO replace str_replace with preg_replace and spaces
    //cal poly
    $str = str_replace("cal poly",'california polytechnic state university',$str);
    $str = str_replace("calpoly",'california polytechnic state university',$str);
+   
+   //ucb
+   $str = str_replace("uc berkeley",'university of california berkeley', $str);
+   $str = str_replace("ucb",'university of california berkeley', $str);
   
    //ucsb 
    $str = str_replace("ucsb",'university of california santa barbara', $str);
@@ -772,21 +777,26 @@ function removeUniversityAbbreviations($str)
    $str = str_replace("uci",'university of california irvine', $str);
    
    //ucla
+   $str = str_replace("uc los angeles",'university of california los angeles', $str);
    $str = str_replace("ucla",'university of california los angeles', $str);
 
    //ucm
+   $str = str_replace("uc merced",'university of california merced', $str);
    $str = str_replace("ucm",'university of california merced', $str);
    
    //ucr
+   $str = str_replace("uc riverside",'university of california riverside', $str);
    $str = str_replace("ucr",'university of california riverside', $str);
    
    //ucsd
+   $str = str_replace("uc san diego",'university of california san diego', $str);
    $str = str_replace("ucsd",'university of california san diego', $str);
    
    //ucsf
    $str = str_replace("ucsf",'university of california san francisco', $str);
    
    //ucsc
+   $str = str_replace("uc santa cruz",'university of california santa cruz', $str);
    $str = str_replace("ucsc",'university of california santa cruz', $str);
    
    //usc
