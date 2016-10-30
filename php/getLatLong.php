@@ -195,7 +195,7 @@ function getLatAndLongForCity($mysqli,$city_name){
        
 	 /* close statement */
 	 $stmt->close();
-	 printf("%s\nlatitude = %s (%s), longitude = %s (%s)\n",$city_name, $lat, gettype($lat), $long, gettype($long));
+	 //printf("%s\nlatitude = %s (%s), longitude = %s (%s)\n",$city_name, $lat, gettype($lat), $long, gettype($long));
 	 return array($city_id, $lat,$long);
       }
        /* close statement */
@@ -229,18 +229,14 @@ function readFileLines($mysqli,$filename){
 			   $name = $data['name'];
 			   $address = $data['formatted_address'];
 			   //TODO (Sunjay) Get zip code
-			   //$zip = $data['address_components'][0];
-			      //['long_name'];
-			   //echo $pieces[0];
-			   echo $zip;
-			      //echo $lat .", " . $lng ;
+			   $zip = $data['address_components'][5]['long_name'];
+			   //print_r($zip);	
 			   //echo "Name: " . $name;
-			   //insertPlace($name, $placeId, $lat, $lng, $address, $cityId);
+			   return insertPlace($name, $placeId, $lat, $lng, $address, $zip, $cityId);
 			}
 		     } 
 		  }
-		  else
-		  {
+		  else{
 		     break;
 		  }
 		  $i++;
@@ -254,16 +250,15 @@ function readFileLines($mysqli,$filename){
 	return $i;
 
 }
-function insertPlace($data){
+function insertPlace($name, $placeId, $lat, $lng, $address, $zipcode, $cityId){
    //print_r($data);
   
-   $query_string="INSERT INTO PLACES (place_id) VALUES (?)"; 
-
+   $query_string="INSERT INTO PLACES (long_name, place_id, latitude, longitude, address_1, zipcode, city_id) VALUES (?, ?, ?, ?, ?, ?, ?)"; 
    if (!($stmt = $mysqli->prepare($query_string))){	       
       echo "Prepare failed: (" . $mysqli->errno . ") " . $mysqli->error;
       return false;
    }
-   $stmt->bind_param('s',$placeId);
+   $stmt->bind_param('ssiisii',$name, $placeId, floatval($lat), floatval($lng), $address, intval($zipcode), intval($cityId));
    // Execute the prepared query.
    if (!$stmt->execute()) {
       echo "Execute failed: (" . $mysqli->errno . ") " . $mysqli->error;
@@ -338,6 +333,6 @@ $filename = "one_university.csv";
 //getCityAndStateNames($mysqli,"popularCities.txt");
 //getCountyNames($mysqli,"all_california_counties.txt");
 //getCountyNames($mysqli,"other_counties.txt");
-$placeId = readFileLines($mysqli,$filename);
+echo readFileLines($mysqli,$filename);
 $mysqli->close();
 ?>
