@@ -4,19 +4,15 @@ function parseData($place,$data)
 {
         //print_r($data);
       
-	/*$lat = $data[0]['geometry']['location']['lat'];
-	$lng = $data[0]['geometry']['location']['lng'];
-	$county = $data[0]['address_components'][1]['long_name'];
-	$county = preg_replace('/\W\w+\s*(\W*)$/', '$1', $county);
-	$long_state = $data[0]['address_components'][2]['long_name'];
-	$short_state = $data[0]['address_components'][2]['short_name'];
-	$ret=array($place,$county,$long_state,$short_state,$lat,$lng);
+//	$county = $data[0]['address_components'][1]['long_name'];
+//	$county = preg_replace('/\W\w+\s*(\W*)$/', '$1', $county);
+	//$ret=array($place,$county,$long_state,$short_state,$lat,$lng);
 	/*
 	foreach ($data[0]['geometry']['location'] as $key => $value) {
 		echo $key;
 	}
 	*/
-        return $data;
+//        return $data;
 }
 
 function insertIntoCountiesTable($mysqli,$data,$i)
@@ -126,14 +122,12 @@ function getCountyNames($mysqli,$filename)
 		fclose($handle);
 	} else {
 		echo "on open file";
-		// error opening the file.
+	        return false;
 	}
 	echo "Read and inserted " . $i . " counties"; 
 	return true;
 }
-
-function readFileLines($mysqli,$filename)
-{
+function readAFile($mysqli,$filename){
 	$i=0;
 	$handle = fopen($filename, "r");
 	if ($handle) {
@@ -150,8 +144,7 @@ function readFileLines($mysqli,$filename)
 	}
 	echo "Read " . $i . " places"; 
 }
-function getCityAndStateNames($mysqli,$filename)
-{
+function getCityAndStateNames($mysqli,$filename){
 	$i=0;
 	$handle = fopen($filename, "r");
 	if ($handle) {
@@ -172,9 +165,8 @@ function getCityAndStateNames($mysqli,$filename)
 	}
 	echo "Read" . $i . " places"; 
 }
-function getLatAndLongFor($mysqli,$city_name)
-{
-   $query_string="SELECT latitude, longitude FROM CITIES WHERE city_name = ?";
+function getLatAndLongForCity($mysqli,$city_name){
+   $query_string="SELECT city_id, latitude, longitude FROM CITIES WHERE city_name = ?";
    if (!($stmt = $mysqli->prepare($query_string))){	       
       echo "Prepare failed: (" . $mysqli->errno . ") " . $mysqli->error;
    }
@@ -185,10 +177,11 @@ function getLatAndLongFor($mysqli,$city_name)
    }
    //return false;
 
-   $lat    = NULL;
+   $city_id = NULL;
+   $lat = NULL;
    $long = NULL;
   /* bind result variables */
-   if (!$stmt->bind_result($lat, $long)) {
+   if (!$stmt->bind_result($city_id, $lat, $long)) {
       echo "Binding output parameters failed: (" . $stmt->errno . ") " . $stmt->error;
    }
     /* fetch values */
@@ -198,13 +191,13 @@ function getLatAndLongFor($mysqli,$city_name)
       /* close statement */
       $stmt->close();
       printf("id = %s (%s), label = %s (%s)\n", $lat, gettype($lat), $long, gettype($long));
-      return array($lat,$long);
+      return array($city_id, $lat,$long);
    }
     /* close statement */
    $stmt->close();
    return NULL;
 }
-function getPlaceId($mysqli,$filename){
+function readFileLines($mysqli,$filename){
 	$i=0;
 	$handle = fopen($filename, "r");
 	if ($handle) {
@@ -213,10 +206,18 @@ function getPlaceId($mysqli,$filename){
 		  if(empty($line) == false){
 		     $pieces = explode(",", $line);
 		     //university name and city
-		     if(helpGetPlaceId($mysqli, $pieces[0], $pieces[2]) != true){
-			break;
-		     }
-		  
+		     $placeIdAndCityId = getPlaceId($mysqli, $pieces[0], $pieces[2]);
+		     $placeId = $placeIdAndCityId[0];
+		     $cityId = $placeIdAndCityId[1];
+		     if(empty($placeId) == false){
+			$data = getGeoPosition($placeId, $mysqli);
+			$lat = $data[0]['geometry']['location']['lat'];
+			$lng = $data[0]['geometry']['location']['lng'];
+			$name = $data[0]['name'];
+			$address = $data[0]['formatted_address'];
+			echo "Address: " . $address;
+			//	insertPlace($name, $placeId, $lat, $lng, $address, $cityId);
+		     } 
 		  }
 		  else
 		  {
@@ -233,15 +234,9 @@ function getPlaceId($mysqli,$filename){
 	return $i;
 
 }
-function insertPlaceId($data){
+function insertPlace($data){
    //print_r($data);
-   //$decoded = json_decode($data);
-   //$placeId = $decoded->
-   $placeId = $data['results'][0]['place_id'];
-   //getLatLong($placeId);
   
-   /******** WIP ***/
-   // echo $placeId;
    $query_string="INSERT INTO PLACES (place_id) VALUES (?)"; 
 
    if (!($stmt = $mysqli->prepare($query_string))){	       
@@ -258,18 +253,21 @@ function insertPlaceId($data){
    $stmt->close();
    return true;
 }
-function helpGetPlaceId($mysqli, $univerityName, $city){
+function getPlaceId($mysqli, $univerityName, $city){
    //get lat, long of city
-   $latAndLong = getLatAndLongFor($mysqli,$city);
+   $latAndLong = getLatAndLongForCity($mysqli,$city);
    if(empty($latAndLong) == false){
-      $lat = $latAndLong[0];
-      $long = $latAndLong[1];
+      $city_id = $latAndLong[0];
+      $lat = $latAndLong[1];
+      $long = $latAndLong[2];
       $url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?key=". MAPS_API_KEY  . "&location=" . urlencode($lat) . "," . urlencode($long) . "&radius=5000&name=" . urlencode(universityName) . "&type=university";
       $jsonData = file_get_contents($url);
       $data = json_decode($jsonData,TRUE);
       if($data['status']=="OK"){
          echo 'Status is okay';
-	 return insertPlaceId($data);
+	 $placeId = $data['results'][0]['place_id'];
+	 return array($placeId, $city_id);
+	 // return insertPlaceId($data);
       }
       else{
         echo 'Error: Status is not okay';
@@ -281,17 +279,14 @@ function helpGetPlaceId($mysqli, $univerityName, $city){
       return false;
    }
 }
-function getGeoPosition($address,$state,$mysqli,$i){
-   //$url = "https://maps.googleapis.com/maps/api/geocode/json?" . "&address=" . urlencode($address)."+".urlencode($state)."&key=" . MAPS_API_KEY;
-   echo $address;
+function getGeoPosition($placeId,$mysqli){
+   $url = "https://maps.googleapis.com/maps/api/place/details/json?placeid=" . $placeId . "&key=" . MAPS_API_KEY;
+     
    $jsonData   = file_get_contents($url);
 
    $data = json_decode($jsonData,TRUE);
    if($data['status']=="OK"){
-
-      $arrayOfData=parseData($address,$data['results']);
-      return outputPlaces($arrayOfData);		
-
+      return $data['results'];
       //return insertIntoCitiesTable($mysqli,$arrayOfData);		
       //	return insertIntoCountiesTable($mysqli,$arrayOfData,$i);		
    }
@@ -315,6 +310,6 @@ $filename = "one_university.csv";
 //getCityAndStateNames($mysqli,"popularCities.txt");
 //getCountyNames($mysqli,"all_california_counties.txt");
 //getCountyNames($mysqli,"other_counties.txt");
-getPlaceId($mysqli,$filename);
+$placeId = readFileLines($mysqli,$filename);
 $mysqli->close();
 ?>
