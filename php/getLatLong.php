@@ -1,5 +1,5 @@
 <?php
-
+require_once('config.php');
 function parseData($place,$data)
 {
         //print_r($data);
@@ -166,36 +166,42 @@ function getCityAndStateNames($mysqli,$filename){
 	echo "Read" . $i . " places"; 
 }
 function getLatAndLongForCity($mysqli,$city_name){
-   $query_string="SELECT city_id, latitude, longitude FROM CITIES WHERE city_name = ?";
-   if (!($stmt = $mysqli->prepare($query_string))){	       
-      echo "Prepare failed: (" . $mysqli->errno . ") " . $mysqli->error;
-   }
-   $stmt->bind_param('s',$city_name);
-   // Execute the prepared query.
-   if (!$stmt->execute()) {
-      echo "Execute failed: (" . $mysqli->errno . ") " . $mysqli->error;
-   }
-   //return false;
+   if(empty($city_name) == false){
+    /* check connection */
+      if ( mysqli_connect_errno() ) {
+	     printf("Connect failed: %s\n", mysqli_connect_error());
+      }
+      $query_string="SELECT city_id, latitude, longitude FROM CITIES WHERE city_name = ?";
+      if (!($stmt = $mysqli->prepare($query_string))){	       
+	 echo "Prepare failed: (" . $mysqli->errno . ") " . $mysqli->error;
+      }
+      $stmt->bind_param('s',$city_name);
+      // Execute the prepared query.
+      if (!$stmt->execute()) {
+	 echo "Execute failed: (" . $mysqli->errno . ") " . $mysqli->error;
+      }
+      //return false;
 
-   $city_id = NULL;
-   $lat = NULL;
-   $long = NULL;
-  /* bind result variables */
-   if (!$stmt->bind_result($city_id, $lat, $long)) {
-      echo "Binding output parameters failed: (" . $stmt->errno . ") " . $stmt->error;
-   }
-    /* fetch values */
-   //while ($stmt->fetch()) {
-   if ($stmt->fetch()) {
-    
-      /* close statement */
+      $city_id = null;
+      $lat = null;
+      $long = null;
+     /* bind result variables */
+      if (!$stmt->bind_result($city_id, $lat, $long)) {
+	 echo "Binding output parameters failed: (" . $stmt->errno . ") " . $stmt->error;
+      }
+       /* fetch values */
+      //while ($stmt->fetch()) {
+      if ($stmt->fetch()) {
+       
+	 /* close statement */
+	 $stmt->close();
+	 printf("%s\nlatitude = %s (%s), longitude = %s (%s)\n",$city_name, $lat, gettype($lat), $long, gettype($long));
+	 return array($city_id, $lat,$long);
+      }
+       /* close statement */
       $stmt->close();
-      printf("id = %s (%s), label = %s (%s)\n", $lat, gettype($lat), $long, gettype($long));
-      return array($city_id, $lat,$long);
    }
-    /* close statement */
-   $stmt->close();
-   return NULL;
+   return null;
 }
 function readFileLines($mysqli,$filename){
 	$i=0;
@@ -211,12 +217,26 @@ function readFileLines($mysqli,$filename){
 		     $cityId = $placeIdAndCityId[1];
 		     if(empty($placeId) == false){
 			$data = getGeoPosition($placeId, $mysqli);
-			$lat = $data[0]['geometry']['location']['lat'];
-			$lng = $data[0]['geometry']['location']['lng'];
-			$name = $data[0]['name'];
-			$address = $data[0]['formatted_address'];
-			echo "Address: " . $address;
-			//	insertPlace($name, $placeId, $lat, $lng, $address, $cityId);
+			if($data == false)
+			{
+			   echo "An unknown error with data has occurred";
+			   break;
+			}
+			else
+			{
+			   $lat = $data['geometry']['location']['lat'];
+			   $lng = $data['geometry']['location']['lng'];
+			   $name = $data['name'];
+			   $address = $data['formatted_address'];
+			   //TODO (Sunjay) Get zip code
+			   //$zip = $data['address_components'][0];
+			      //['long_name'];
+			   //echo $pieces[0];
+			   echo $zip;
+			      //echo $lat .", " . $lng ;
+			   //echo "Name: " . $name;
+			   //insertPlace($name, $placeId, $lat, $lng, $address, $cityId);
+			}
 		     } 
 		  }
 		  else
@@ -253,25 +273,31 @@ function insertPlace($data){
    $stmt->close();
    return true;
 }
-function getPlaceId($mysqli, $univerityName, $city){
+function getPlaceId($mysqli, $universityName, $city){
    //get lat, long of city
    $latAndLong = getLatAndLongForCity($mysqli,$city);
    if(empty($latAndLong) == false){
       $city_id = $latAndLong[0];
       $lat = $latAndLong[1];
       $long = $latAndLong[2];
-      $url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?key=". MAPS_API_KEY  . "&location=" . urlencode($lat) . "," . urlencode($long) . "&radius=5000&name=" . urlencode(universityName) . "&type=university";
+      $url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?key=". MAPS_API_KEY  . "&location=" . urlencode($lat) . "," . urlencode($long) . "&radius=5000&name=" . urlencode($universityName) . "&type=university";
       $jsonData = file_get_contents($url);
       $data = json_decode($jsonData,TRUE);
-      if($data['status']=="OK"){
-         echo 'Status is okay';
-	 $placeId = $data['results'][0]['place_id'];
-	 return array($placeId, $city_id);
-	 // return insertPlaceId($data);
+      if(empty($data) == false){
+	 if($data['status']=="OK"){
+	    //echo 'Status is okay';
+	    $placeId = $data['results'][0]['place_id'];
+	    echo 'Place ID: ' . $placeId;
+	    return array($placeId, $city_id);
+	 }
+	 else{
+	   echo 'Error: Status is not okay';
+	   return false;
+	 }
       }
       else{
-        echo 'Error: Status is not okay';
-        return false;
+	echo 'Error: Data is empty';
+	return false;
       }
    }
    else{
@@ -283,10 +309,12 @@ function getGeoPosition($placeId,$mysqli){
    $url = "https://maps.googleapis.com/maps/api/place/details/json?placeid=" . $placeId . "&key=" . MAPS_API_KEY;
      
    $jsonData   = file_get_contents($url);
-
    $data = json_decode($jsonData,TRUE);
+   //$json_string = json_encode($data['result'], JSON_PRETTY_PRINT);
+   // echo $json_string;
    if($data['status']=="OK"){
-      return $data['results'];
+      //print_r($data[0]);
+       return $data['result'];
       //return insertIntoCitiesTable($mysqli,$arrayOfData);		
       //	return insertIntoCountiesTable($mysqli,$arrayOfData,$i);		
    }
@@ -294,7 +322,7 @@ function getGeoPosition($placeId,$mysqli){
    {
       print_r($data);
    }
-   return true;
+   return false;
 
 }
 
