@@ -110,14 +110,14 @@ def smetrics(test, train):
    # Classify some text
     #print(cl.classify("Their burgers are amazing."))  # "pos"
     #print(cl.classify("I don't like their pizza."))   # "neg"
-    #errors = []
+    errors = []
     #print(classy.classify("We like burgers."))
-   #for (line, tag) in testSet:
-   # #    guess = classy.classify(line)
-    #    if guess != tag:
-     #       errors.append( (tag, guess, line) )
-      #      for (tag, guess, line) in sorted(errors):
-      #          print('correct={:<8} guess={:<8s} name={:<30}'.format(tag, guess, name))
+    for (line, tag) in test:
+       guess = cl.classify(line)
+       if guess != tag:
+          errors.append( (tag, guess, line) )
+          for (tag, guess, line) in sorted(errors):
+             print('correct={:<8} guess={:<8s} name={:<30}'.format(tag, guess, line))
     # print 'accuracy:', nltk.classify.util.accuracy(classifier, tesSet)
     # return nltk.classify.accuracy(classy, testSet)
     # print 'accuracy:', nltk.classify.util.accuracy(classy, testSet)
