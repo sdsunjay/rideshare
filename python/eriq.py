@@ -25,16 +25,17 @@ def getAllWords(allText):
     allWords = words.keys()
 
 
-def getFeatures(text):
+def getFeatures(words):
     """Given some text (|text|), return a dict of features for that text."""
     global allWords
 
     features = {}
     # Turn the input into a set of words.
-    textSet = set(text.split())
+    textSet = set(words.split())
     for word in allWords:
-        features["Has: %s" % word] = (word in textSet)
+        features["Has: %s" % word] = (word in words)
     return features
+    #return dict([(word, True) for word in words])
 
 
 def splitIntoFolds(lst, n):
@@ -63,13 +64,23 @@ def evaluate(allData, numberOfFolds):
 
     print("Total Accuracy: %0.5f" % (accuracy / numberOfFolds))
 
+def findInaccuracies(classy, test):
+    """Using the dev-test set, we can generate a list of the errors that the classifier makes when predicting if an individual is offering or seeking a ride"""
+    errors = []
+    for (line, tag) in test:
+       guess = classy.classify(getFeatures(line))
+       if guess != tag:
+          errors.append( (tag, guess, line) )
+          for (tag, guess, line) in sorted(errors):
+             print "Correct = " + tag + " Guess = " + guess + " line = " + line
+	     #('correct={:<8} guess={:<8s} line={:<30}'.format(tag, guess, line)) 
 
 def run(test, train):
-    """Convert list of strings into list of features (dict of features). Each argument is a list of strings."""
+    """Convert list of strings into list of features (first dict of features, then LazyMap of features). Each argument is a list of strings."""
     trainingSet = nltk.classify.apply_features(getFeatures, train)
     testSet = nltk.classify.apply_features(getFeatures, test)
-
     classy = nltk.NaiveBayesClassifier.train(trainingSet)
+    findInaccuracies(classy,test)
     return nltk.classify.accuracy(classy, testSet)
 
 
