@@ -3,9 +3,10 @@
 
 import random
 import re
-
-import nltk
-
+from nltk.corpus import stopwords
+import nltk.classify.util, nltk.metrics
+from nltk.classify import NaiveBayesClassifier
+from nltk.corpus import stopwords
 allWords = []
 
 
@@ -13,17 +14,18 @@ def cleanText(text):
     """Clean up the text."""
     return re.sub(r'\s+', ' ', re.sub(r'\W+', " ", text.lower())).strip()
 
-
 def getAllWords(allText):
     """Find all unique words in the text (|allText|). |allText| is a list of strings."""
     global allWords
 
     words = {}
+    # Remove stopwords while we are here
+    stopset = set(stopwords.words('english'))
     for text in allText:
         for word in text.split():
-            words[word] = True
+            if word not in stopset:
+                words[word] = True
     allWords = words.keys()
-
 
 def getFeatures(words):
     """Given some text (|text|), return a dict of features for that text."""
@@ -73,14 +75,14 @@ def findInaccuracies(classy, test):
           errors.append( (tag, guess, line) )
           for (tag, guess, line) in sorted(errors):
              print "Correct = " + tag + " Guess = " + guess + " line = " + line
-	     #('correct={:<8} guess={:<8s} line={:<30}'.format(tag, guess, line)) 
+	     # print('correct={:<8} guess={:<8s} name={:<30}'.format(tag, guess, name))
 
 def run(test, train):
     """Convert list of strings into list of features (first dict of features, then LazyMap of features). Each argument is a list of strings."""
     trainingSet = nltk.classify.apply_features(getFeatures, train)
     testSet = nltk.classify.apply_features(getFeatures, test)
-    classy = nltk.NaiveBayesClassifier.train(trainingSet)
-    findInaccuracies(classy,test)
+    classy = NaiveBayesClassifier.train(trainingSet)
+    #findInaccuracies(classy,test)
     return nltk.classify.accuracy(classy, testSet)
 
 
