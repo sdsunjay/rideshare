@@ -1,6 +1,3 @@
-# from textblob.classifiers import NaiveBayesClassifier
-# from textblob import TextBlob
-
 import random
 import re
 from nltk.corpus import stopwords
@@ -8,7 +5,6 @@ import nltk.classify.util, nltk.metrics
 from nltk.classify import NaiveBayesClassifier
 from nltk.corpus import stopwords
 allWords = []
-
 
 def cleanText(text):
     """Clean up the text."""
@@ -28,7 +24,7 @@ def getAllWords(allText):
     allWords = words.keys()
 
 def getFeatures(words):
-    """Given some text (|text|), return a dict of features for that text."""
+    """Given a list of strings (|text|), return a dict of features for that text."""
     global allWords
 
     features = {}
@@ -44,7 +40,8 @@ def splitIntoFolds(lst, n):
     """Split lst into n chunks."""
     division = len(lst) / float(n)
     return [lst[int(round(division * i)): int(round(division * (i + 1)))] for i in xrange(n)]
-
+    # for python 3+
+    # return [lst[int(round(division * i)): int(round(division * (i + 1)))] for i in range(n)]
 
 def evaluate(allData, numberOfFolds):
     """For cross-validation, we divide the data (|allData|) into N (|numberOfFolds|) subsets. Then we run each subset."""
@@ -78,11 +75,12 @@ def findInaccuracies(classy, test):
 	     # print('correct={:<8} guess={:<8s} name={:<30}'.format(tag, guess, name))
 
 def run(test, train):
-    """Convert list of strings into list of features (first dict of features, then LazyMap of features). Each argument is a list of strings."""
+    """Convert list of tuples into list of features (first dict of features, then LazyMap of features). Each argument is a list of strings."""
     trainingSet = nltk.classify.apply_features(getFeatures, train)
     testSet = nltk.classify.apply_features(getFeatures, test)
     classy = NaiveBayesClassifier.train(trainingSet)
-    #findInaccuracies(classy,test)
+    # findInaccuracies(classy,test)
+    # classy.show_most_informative_features(10)
     return nltk.classify.accuracy(classy, testSet)
 
 
