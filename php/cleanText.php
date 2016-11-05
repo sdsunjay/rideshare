@@ -708,6 +708,14 @@ function removeSlang($str)
 }
 function replaceTo($str)
 {
+   $str = str_replace("====>>>>", ' to ', $str);
+   $str = str_replace("===>>>", ' to ', $str);
+   $str = str_replace("==>>>", ' to ', $str);
+   $str = str_replace("===>>", ' to ', $str);
+   $str = str_replace("==>>", ' to ', $str);
+   $str = str_replace("==>", ' to ', $str);
+   $str = str_replace("=>>", ' to ', $str);
+   $str = str_replace("=>", ' to ', $str);
    $str = str_replace("---->>>>", ' to ', $str);
    $str = str_replace("---->>>", ' to ', $str);
    $str = str_replace("--->>>>", ' to ', $str);
