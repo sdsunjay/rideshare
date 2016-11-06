@@ -1,5 +1,5 @@
 <?php
-session_start();
+
 require_once('config.php');
 require_once('cleanText.php');
 require __DIR__ . '/vendor/autoload.php';
@@ -13,16 +13,14 @@ use Facebook\FacebookAuthorizationException;
 use Facebook\GraphObject;
 use Facebook\GraphUser;
 
-function outputToFile($myfile,$text)
-{
+function outputToFile($myfile,$text){
 
    $text = cleanPost($text);          
    fwrite($myfile, $text);
    fwrite($myfile,"\n\n"); 
 }
 
-function outputToScreen($post_number, $post_id,$message)
-{
+function outputToScreen($postCount, $postId, $message, $createdTime){
    //echo $post_number . '.'; 
    //echo '<br>';
    //echo 'ID: ' . $post_id;
@@ -56,42 +54,6 @@ function outputToScreen($post_number, $post_id,$message)
    }*/
    echo '<br>';
 }
-function handleComments($id)
-{
-   //deal with comments on posts later
-   //same with $id["likes"]
-   $comments = $id["comments"];
-   //echo 'comments: ';
-   //print_r($comments);
-}
-function handleNext($next_url)
-{
-
-   if($next_url)
-   {
-      $parts = parse_url($next_url);
-      parse_str($parts['query'], $query);
-      $time = $query['until'];
-      echo 'in next';
-      return $time;
-   }
-   return NULL;
-
-}
-function handlePrevious($previous_url)
-{
-
-   if($previous_url)
-   {
-      $parts = parse_url($previous_url);
-      parse_str($parts['query'], $query);
-      $time = $query['since'];
-      echo 'in previous';
-      return $time;
-   }
-   return NULL;
-}
-
 
 function storePostInDB($post_id, $message, $created_time, $mysqli)
 {
@@ -109,7 +71,6 @@ function storePostInDB($post_id, $message, $created_time, $mysqli)
   // echo $message . '<br>';
    //echo $created_time . '<br>';
    $query_string="INSERT IGNORE INTO POSTS(id,message,created_time) VALUES (?,?,?)"; 
-
    /* Prepared statement, stage 1: prepare */
    if (!($stmt = $mysqli->prepare($query_string))) {
       echo "Prepare failed: (" . $mysqli->errno . ") " . $mysqli->error;
@@ -127,13 +88,10 @@ function storePostInDB($post_id, $message, $created_time, $mysqli)
       echo "Execute failed: (" . $stmt->errno . ") " . $stmt->error;
       return false;
    }
-   else
-   {
+   else{
       $stmt->close();
-      if ($mysqli->warning_count)
-      {
-	 if ($result = $mysqli->query("SHOW WARNINGS")) 
-	 {
+      if ($mysqli->warning_count){
+	 if ($result = $mysqli->query("SHOW WARNINGS")) {
 	    $row = $result->fetch_row();
 	    printf("%s (%d): %s\n", $row[0], $row[1], $row[2]);
 	    $result->close();
@@ -144,8 +102,8 @@ function storePostInDB($post_id, $message, $created_time, $mysqli)
    return true;
 
 }
-function getMoreInfo($fb, $post_id)
-{
+
+function getMoreInfo($fb, $post_id){
 
    $requestString = '/' . $post_id;
    $request = $fb->request('GET', $requestString);
@@ -153,12 +111,10 @@ function getMoreInfo($fb, $post_id)
    $graphObject = $response->getGraphObject();
    echo $graphObject;
    echo '<br>';
-   echo '<br>';
 }
 
 
-function parsePost($fb, $postCount, $post,$outputToScreenFlag,$outputToFileFlag,$myfile,$mysqli,$outputToDBFlag)
-{
+function parsePost($fb, $postCount, $post,$outputToScreenFlag,$outputToFileFlag,$myfile,$mysqli,$outputToDBFlag){
 
    $post_id = $post["id"];
    //getMoreInfo($fb, $post_id); 
@@ -169,20 +125,18 @@ function parsePost($fb, $postCount, $post,$outputToScreenFlag,$outputToFileFlag,
    //DO NOT DELETE, this is useful for debugging
    //print_r($id);
 
-   if($outputToScreenFlag)
-   {	
+   if($outputToScreenFlag){	
       outputToScreen($postCount, $post_id, $message, $created_time);
    }
-   if($outputToFileFlag)
-   {
-      outputToFile($myfile,$text);
+   if($outputToFileFlag){
+      outputToFile($myfile,$message);
    }
-   if($outputToDBFlag)
-   {
-      if(storePostInDB($post_id, $message, $created_time, $mysqli) == false)
-      {
-	 echo "<br>Unable to store item in DB<br>";
-	 //throw new Exception('unable to store in DB');
+   if($outputToDBFlag){
+      if(storePostInDB($post_id, $message, $created_time, $mysqli) == false){
+	 echo '<p>Error: Unable to store item in DB</p>';
+      }
+      else{
+
       }
    }
 
@@ -190,15 +144,6 @@ function parsePost($fb, $postCount, $post,$outputToScreenFlag,$outputToFileFlag,
 
 function handlePostsRequest($fb, $requestString,$myfile,$mysqli,$outputToFileFlag,$outputToScreenFlag,$outputToDBFlag)
 {
-
-
-   // FOR LONG LIVED ACCESS TOKEN
-   /// User logged in, get the AccessToken entity.
-   //  $accessToken = $session->getAccessToken();
-   // Exchange the short-lived token for a long-lived token.
-   // $longLivedAccessToken = $accessToken->extend();	
-   /* PHP SDK v5.0.0 */
-   /* make the API call */
    try {
       $request = $fb->request('GET', $requestString);
       $response = $fb->getClient()->sendRequest($request);
@@ -207,7 +152,6 @@ function handlePostsRequest($fb, $requestString,$myfile,$mysqli,$outputToFileFla
       $postCount = 0;
 
       do {
-	 //	 echo '<h1>Page #' . $pageCount . ':</h1>' . "\n\n";
 	 // Iterate over all the GraphNode's returned from the edge
 	 foreach ($pagesEdge as $page) {
 	    $post_data = $page->asArray();
@@ -218,19 +162,22 @@ function handlePostsRequest($fb, $requestString,$myfile,$mysqli,$outputToFileFla
 	 $pageCount++;
 	 // Get the next page of results
       }while ($pagesEdge = $fb->next($pagesEdge));
-
+      echo "Post Total: " . $postCount;
    } catch(Facebook\Exceptions\FacebookResponseException $e) {
       // When Graph returns an error
       echo 'Graph returned an error: ' . $e->getMessage();
-      //exit;
+      return false;
    } catch(Facebook\Exceptions\FacebookSDKException $e) {
       // When validation fails or other local issues
       echo 'Facebook SDK returned an error: ' . $e->getMessage();
-      //exit;
+      return false;
    }
 
    return true;
 }
+/**
+  *
+  */
 function initPostsRequest($fb, $outputToScreenFlag,$outputToFileFlag,$outputToDBFlag)
 {
    //file descriptor
@@ -255,99 +202,71 @@ function initPostsRequest($fb, $outputToScreenFlag,$outputToFileFlag,$outputToDB
       echo 'Other (session) request error: '.$e->getMessage();
       return false;
    }
-   if($outputToFileFlag)
-   {
+   if($outputToFileFlag){
       $name_of_file=date("Y:n:d:H:i:s")."_training.txt";
-      $myfile = fopen($name_of_file, "a") or die("Unable to open file!");
+      $fp = fopen($name_of_file, "a") or die("Unable to open file!");
+      if ( !$fp ) {
+	 $outputToFileFlag = false;
+	 echo '<p>Error: Unable to write to file</p>';
+      }  
    }
-   if($outputToScreenFlag)
-   {
+   if($outputToScreenFlag){
       echo '<p>Date: '.date("Y:n:d:H:i:s").'</p>';
    }
-   if($outputToDBFlag)
-   {
-
+   if($outputToDBFlag){
       $mysqli = new mysqli(HOST, USERNAME, PASSWORD, DATABASE_NAME);
       if ($mysqli->connect_errno) 
       {
 	 echo "Failed to connect to MySQL: (" . $mysqli->connect_errno . ") " . $mysqli->connect_error;
       }
+      $outputToDBFlag = false;
    }
    //we only get 100 posts per page
    $requestString='/'. GROUP_ID .'/feed?limit=100&since='.$since;
-   if(handlePostsRequest($fb, $requestString,$myfile,$mysqli,$outputToFileFlag,$outputToScreenFlag,$outputToDBFlag))
-   {
-      if($outputToFileFlag)
-      {
-	 //write to file
-	 fclose($myfile);
+   if(handlePostsRequest($fb, $requestString, $fp, $mysqli, $outputToFileFlag, $outputToScreenFlag, $outputToDBFlag)){
+      if($outputToFileFlag){
+	 fclose($fp);
       }
-      if($outputToDBFlag)
-      {
+      if($outputToDBFlag){
 	 $mysqli->close();
       }
       return true;
    }
    return false;
-
 }
 
-date_default_timezone_set("America/Los_Angeles");
+function main() {
 
-if (!session_id()) {
-   session_start();
-}
+   if (isset($_SESSION['fb_access_token'])) {
+      //do we want to output to a file
+      $outputToFileFlag = false;
+      //do we want to output to a database
+      $outputToDBFlag = false;
+      //do we want to output to the screen (for debugging purposes)
+      $outputToScreenFlag = true;
 
-$fb = new Facebook\Facebook([
-      'app_id' => APP_ID,
-      'app_secret' => APP_SECRET,
-      'default_graph_version' => 'v2.8',
-]);
-
-
-$helper = $fb->getRedirectLoginHelper();
-try {
-   $accessToken = $helper->getAccessToken();
-} catch(Facebook\Exceptions\FacebookResponseException $e) {
-   // When Graph returns an error
-   echo 'Graph returned an error: ' . $e->getMessage();
-   exit;
-} catch(Facebook\Exceptions\FacebookSDKException $e) {
-   // When validation fails or other local issues
-   echo 'Facebook SDK returned an error: ' . $e->getMessage();
-   exit;
-}
-
-if (isset($_SESSION['facebook_access_token'])) {
-   // Logged in!
-   $_SESSION['facebook_access_token'] = (string) $accessToken;
-   // Sets the default fallback access token so we don't have to pass it to each request
-   $fb->setDefaultAccessToken((string) $accessToken);   
-   //do we want to output to a file
-   $outputToFileFlag = false;
-   //do we want to output to a database
-   $outputToDBFlag = true;
-   //do we want to output to the screen (for debugging purposes)
-   $outputToScreenFlag = false;
-
-
-   try {
-
-      if(initPostsRequest($fb, $outputToScreenFlag,$outputToFileFlag,$outputToDBFlag))
-      {
-	 return 0;
+      try {
+	 if(initPostsRequest($fb, $outputToScreenFlag,$outputToFileFlag,$outputToDBFlag)) {
+	    return 0;
+	 }
+	 else{
+	    echo 'An unkown error occured';
+	 }
+      } catch( FacebookRequestException $e ) {
+	 // Facebook has returned an error
+	 echo 'Facebook (session) request error: '.$e->getMessage();
+      } catch( Exception $e ) {
+	 // Any other error
+	 echo 'Other (session) request error: '.$e->getMessage();
       }
-   } catch( FacebookRequestException $e ) {
-      // Facebook has returned an error
-      echo 'Facebook (session) request error: '.$e->getMessage();
-   } catch( Exception $e ) {
-      // Any other error
-      echo 'Other (session) request error: '.$e->getMessage();
    }
-
-
-   // Now you can redirect to another page and use the
-   // access token from $_SESSION['facebook_access_token']
+   else {
+      echo 'No facebook session';
+      echo '<p>Please <a href=\'login.php\'>log in</a>';
+   }
 }
-
+/**
+ * Calls the main program function
+ */
+main();
 ?>
