@@ -463,81 +463,10 @@ function remove_emoji($str){
 
    return preg_replace('/([0-9|#][\x{20E3}])|[\x{00ae}|\x{00a9}|\x{203C}|\x{2047}|\x{2048}|\x{2049}|\x{3030}|\x{303D}|\x{2139}|\x{2122}|\x{3297}|\x{3299}][\x{FE00}-\x{FEFF}]?|[\x{2190}-\x{21FF}][\x{FE00}-\x{FEFF}]?|[\x{2300}-\x{23FF}][\x{FE00}-\x{FEFF}]?|[\x{2460}-\x{24FF}][\x{FE00}-\x{FEFF}]?|[\x{25A0}-\x{25FF}][\x{FE00}-\x{FEFF}]?|[\x{2600}-\x{27BF}][\x{FE00}-\x{FEFF}]?|[\x{2900}-\x{297F}][\x{FE00}-\x{FEFF}]?|[\x{2B00}-\x{2BF0}][\x{FE00}-\x{FEFF}]?|[\x{1F000}-\x{1F6FF}][\x{FE00}-\x{FEFF}]?/u', '', $str);
 }
-function helpInsertPostIntoClean($mysqli,$id,$post,$debugFlag)
-{
-
-   $cleaned_post = cleanPost($post);
-   if($debugFlag)
-   {
-      echo "Original text:  ". $post."<br>";
-      echo "Cleaned text: ". $cleaned_post."<br><br>";
-      return true;
-   }	
-   //create table clean_posts (pid bigint unsigned not null comment 'post id',post text not null comment 'cleaned post', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,primary key (pid),foreign key(pid) references posts(id));	
-   $query_string = "INSERT INTO clean_posts(pid,post) VALUES (?,?)"; 
-   $stmt= $mysqli->prepare($query_string);
-   $stmt->bind_param('ss',$id,$cleaned_post);
-   // Execute the prepared query.
-   if ($stmt->execute()) 
-   {
-      $stmt->close();
-      if ($mysqli->warning_count) {
-	 if ($result = $mysqli->query("SHOW WARNINGS")) {
-	    $row = $result->fetch_row();
-	    printf("%s (%d): %s\n", $row[0], $row[1], $row[2]);
-	    $result->close();
-	 }
-      }
-      return true;
-   }	
-   echo "ERROR in inserting into clean_post";
-   return false;
-}
-function removeOldPostsFromCleanTable()
-{
-   mysql_connect(HOST,USERNAME,PASSWORD ) or die( mysql_error() );
-   mysql_select_db(DATABASE_NAME) or die( mysql_error() );
-   return mysql_query( "DELETE FROM clean_posts"); 
-}
-function insertPostIntoCleanTable($mysqli,$debugFlag)
-{
-
-   // GET 'dirty' posts
-   $query_string = "select id,message from " . POSTS_TABLE;
-
-   $result = mysqli_query($mysqli, $query_string);
-   $i = 0;
-   if (mysqli_num_rows($result) > 0) {
-      // output data of each row
-      while($row = mysqli_fetch_assoc($result)) {
-	 if(helpInsertPostIntoClean($mysqli,$row["id"],$row["message"],$debugFlag))
-	 {
-	    //echo $i."<br>";
-	    /*if($i > 100)
-	      {
-	      echo "breaking at 100\n";
-	      break;
-
-	      }*/
-	 }
-	 else
-	 {
-	    echo "Error with ".$i." record. <br>"; 
-	    break;
-	 }
-	 $i++;
-      }
-   } else {
-      echo "<br>Error! No results <br>";
-   }
-
-   echo "SUCCESSFULLY INSERTED: ". $i." posts. <br>";
-   mysqli_close($mysqli);	
-
-}
-//make contractions go away
-function removeContractions($str)
-{
+/**
+ * Remove contractions from the string (|str|)
+ */
+function removeContractions($str){
 
    $str = str_replace("i'm",'i am',$str);
    $str = str_replace("i'll",'i will',$str);
@@ -562,7 +491,6 @@ function removeContractions($str)
    $str = str_replace("you'll",'you will',$str);
    $str = str_replace("you'd",'you would',$str);
    $str = str_replace("you've",'you have',$str);
-
 
    $str = str_replace("it's",'it is',$str);
    $str = str_replace("it'll",'it will',$str);
@@ -591,7 +519,6 @@ function removeContractions($str)
    $str = str_replace("what'll",'what will',$str);
    $str = str_replace("what'd",'what would',$str);
 
-
    $str = str_replace("where's",'where is',$str);
    $str = str_replace("where're",'where are',$str);
    $str = str_replace("where'll",'where will',$str);
@@ -613,9 +540,8 @@ function removeContractions($str)
    $str = str_replace("how'd",'how would',$str);
 
    $str = str_replace("p.s.",'postscript',$str);
-   
-   $str = str_replace("aren't",'are not',$str);
 
+   $str = str_replace("aren't",'are not',$str);
    $str = str_replace("couldn't",'could not',$str);
    $str = str_replace("can't",'cannot',$str);
    $str = str_replace("don't",'do not',$str);
@@ -646,9 +572,10 @@ function removeContractions($str)
    return $str;
 }
 
-function removeSlang($str)
-{
+function removeSlang($str){
    $str = str_replace("l.a.",'la',$str);
+   $str = str_replace("offerring",'offering',$str);
+   $str = str_replace("seeeking",'seeking',$str);
 
    $str = str_replace("zzzzzzz",'z',$str);
    $str = str_replace("zzzzzz",'z',$str);
@@ -657,6 +584,7 @@ function removeSlang($str)
    $str = str_replace("zzz",'z',$str);
    $str = str_replace("zz",'z',$str);
 
+   $str = str_replace("deats",'details',$str);
    $str = str_replace("tmrw",'tomorrow',$str);
    $str = str_replace("tmr",'tomorrow',$str);
    $str = str_replace("wanna",'want to',$str);
@@ -726,6 +654,8 @@ function replaceTo($str)
    $str = str_replace("-->>", ' to ', $str);
    $str = str_replace("-->>", ' to ', $str);
    $str = str_replace("->>", ' to ', $str);
+   $str = str_replace("------->", ' to ', $str);
+   $str = str_replace("------>", ' to ', $str);
    $str = str_replace("----->", ' to ', $str);
    $str = str_replace("---->", ' to ', $str);
    $str = str_replace("--->", ' to ', $str);
@@ -755,63 +685,134 @@ function replaceTo($str)
 function removeHighways($str)
 {
 
-   $str = str_replace("101",'highway',$str);
-   $str = str_replace("405",'highway',$str);
-   $str = str_replace("680",'highway',$str);
-   $str = str_replace("880",'highway',$str);
-   $str = str_replace("80",'highway',$str);
+   $subst = ' <$HIGHWAY$> ';
+   
+   $re = '/\s101\s/';
+   $str = preg_replace($re, $subst, $str);
+   
+   $re = '/\s405\s/';
+   $str = preg_replace($re, $subst, $str);
+   
+   $re = '/\s680\s/';
+   $str = preg_replace($re, $subst, $str);
+   
+   $re = '/\s880\s/';
+   $str = preg_replace($re, $subst, $str);
+   
+   $re = '/\s80\s/';
+   $str = preg_replace($re, $subst, $str);
+   
+   $re = '/\s134\s/';
+   $str = preg_replace($re, $subst, $str);
+   
+   $re = '/\s210\s/';
+   $str = preg_replace($re, $subst, $str);
+   
+   $re = '/\s280\s/';
+   $str = preg_replace($re, $subst, $str);
+   
+   $re = '/\s85\s/';
+   $str = preg_replace($re, $subst, $str);
+   
+   $re = '/\s87\s/';
+   $str = preg_replace($re, $subst, $str);
+   
+   $re = '/\s71\s/';
+   $str = preg_replace($re, $subst, $str);
+   
+   $re = '/hwy\s50/';
+   $str = preg_replace($re, $subst, $str);
+   
+   $re = '/hwy\s5/';
+   $str = preg_replace($re, $subst, $str);
+   
+   $re = '/5\ssouth/';
+   $str = preg_replace($re, $subst, $str);
+   
    return $str;
 }
 
 function removeUniversityAbbreviations($str)
 {
 
-   //TODO replace str_replace with preg_replace and spaces
    //cal poly
    $str = str_replace("cal poly",'california polytechnic state university',$str);
    $str = str_replace("calpoly",'california polytechnic state university',$str);
    
-   //ucb
-   $str = str_replace("uc berkeley",'university of california berkeley', $str);
-   $str = str_replace("ucb",'university of california berkeley', $str);
-  
-   //ucsb 
-   $str = str_replace("ucsb",'university of california santa barbara', $str);
+   //university of california
+   $re = '/\suc\s/';
+   $subst = ' university of california ';
+   $str = preg_replace($re, $subst, $str);
    
-   //ucd
-   $str = str_replace("ucd",'university of california davis', $str);
+   //california state university
+   $re = '/\scsu\s/';
+   $subst = ' california state university ';
+   $str = preg_replace($re, $subst, $str);
+
+   //ucb
+   $re = '/\sucb\s/';
+   $subst = ' university of california berkeley ';
+   $str = preg_replace($re, $subst, $str);
+
+   //ucsb 
+   $re = '/\sucb\s/';
+   $subst = ' university of california santa barbara ';
+   $str = preg_replace($re, $subst, $str);
+
+   //ucsb 
+   $re = '/\sucd\s/';
+   $subst = ' university of california davis ';
+   $str = preg_replace($re, $subst, $str);
    
    //uci
-   $str = str_replace("uci",'university of california irvine', $str);
-   
+   $re = '/\sucd\s/';
+   $subst = ' university of california irvine ';
+   $str = preg_replace($re, $subst, $str);
+
    //ucla
-   $str = str_replace("uc los angeles",'university of california los angeles', $str);
-   $str = str_replace("ucla",'university of california los angeles', $str);
+   $re = '/\sucla\s/';
+   $subst = ' university of california los angeles ';
+   $str = preg_replace($re, $subst, $str);
 
    //ucm
-   $str = str_replace("uc merced",'university of california merced', $str);
-   $str = str_replace("ucm",'university of california merced', $str);
-   
+   $re = '/\sucm\s/';
+   $subst = ' university of california merced ';
+   $str = preg_replace($re, $subst, $str);
+
    //ucr
-   $str = str_replace("uc riverside",'university of california riverside', $str);
-   $str = str_replace("ucr",'university of california riverside', $str);
-   
+   $re = '/\sucr\s/';
+   $subst = ' university of california riverside ';
+   $str = preg_replace($re, $subst, $str);
+
    //ucsd
-   $str = str_replace("uc san diego",'university of california san diego', $str);
-   $str = str_replace("ucsd",'university of california san diego', $str);
-   
+   $re = '/\sucsd\s/';
+   $subst = ' university of california san diego ';
+   $str = preg_replace($re, $subst, $str);
+
    //ucsf
-   $str = str_replace("ucsf",'university of california san francisco', $str);
+   $re = '/\sucsf\s/';
+   $subst = ' university of california san francisco ';
+   $str = preg_replace($re, $subst, $str);
    
    //ucsc
-   $str = str_replace("uc santa cruz",'university of california santa cruz', $str);
-   $str = str_replace("ucsc",'university of california santa cruz', $str);
-   
+   $re = '/\sucsc\s/';
+   $subst = ' university of california santa cruz ';
+   $str = preg_replace($re, $subst, $str);
+
    //usc
-   $str = str_replace("usc",'university of southern california', $str);
+   $re = '/\susc\s/';
+   $subst = ' university of southern california ';
+   $str = preg_replace($re, $subst, $str);
 
    //stanford
-   $str = str_replace("stanford",'Stanford University', $str);
+   $re = '/\sstanford\s/';
+   $subst = ' stanford university ';
+   $str = preg_replace($re, $subst, $str);
+   
+   //sjsu
+   $re = '/\ssjsu\s/';
+   $subst = ' san jose state university ';
+   $str = preg_replace($re, $subst, $str);
 
    return $str;
 }
@@ -820,26 +821,62 @@ function removeAirportAbbreviations($str)
 {
 
    //sf airport
-   $str = str_replace("sf airport",'san francisco international airport',$str);
+   $str = str_replace("san francisco airport",'san francisco international airport',$str);
    
+   //sfo
+   $re = '/\sfo\s/';
+   $subst = ' san francisco international airport ';
+   $str = preg_replace($re, $subst, $str);
+
    //lax - los angeles international  airport
-   $str = str_replace("lax",'los angeles international airport',$str);
-   
+   $re = '/\slax\s/';
+   $subst = ' los angeles international airport ';
+   $str = preg_replace($re, $subst, $str);
+
    //la airport - los angeles international  airport
-   $str = str_replace("la airport",'los angeles international airport',$str);
-   
+   $str = str_replace('los angeles airport','los angeles international airport',$str);
+
    //sj airport
-   $str = str_replace("sj airport",'mineta san jose international airport',$str);
+   $str = str_replace('san jose airport','mineta san jose international airport',$str);
    
+   //sjc - mineta san jose international airport 
+   $re = '/\sjc\s/';
+   $subst = ' mineta san jose international airport'; 
+   $str = preg_replace($re, $subst, $str);
+   
+   //oakland airport
+   $str = str_replace('oakland airport','oakland international airport',$str);
+  
+   //palm springs airport
+   $str = str_replace('palm springs airport','palm springs international airport',$str);
+
    //sb airport
-   $str = str_replace("sb airport",'santa barbara municipal airport',$str);
+   $str = str_replace('santa barbara airport','santa barbara municipal airport',$str);
+   
+   //monterey airport
+   $str = str_replace('monterey airport','monterey regional airport',$str);
+   
+   //santa maria airport
+   $str = str_replace('santa maria airport','santa maria public airport',$str);
+   
+   //stockton airport
+   $str = str_replace('stockton airport','stockton metropolitan airport',$str);
+   
+   //sd airport
+   $str = str_replace('san diego airport','san diego international airport',$str);
+   
+   //oc airport
+   $str = str_replace('orange county airport','john wayne airport',$str);
+   $str = str_replace('santa ana airport','john wayne airport',$str);
 
    //slo airport - San Luis Obispo County Regional Airport
-   $str = str_replace("slo airport",'san luis obispo county regional airport',$str);
-   
+   $str = str_replace('san luis obispo airport','san luis obispo county regional airport',$str);
+
    //sbp - San Luis Obispo County Regional Airport
-   $str = str_replace("sbp",'san luis obispo county regional airport',$str);
-   
+   $re = '/\sbp\s/';
+   $subst = ' san luis obispo county regional airport ';
+   $str = preg_replace($re, $subst, $str);
+
    return $str;
 }
 
@@ -851,12 +888,17 @@ function removeCityAppreviations($str)
    $re = '/\sla\s/';
    $subst = ' los angeles ';
    $str = preg_replace($re, $subst, $str);
-   
+
    //sgv - san gabriel valley		
    $re = '/\ssgv\s/';
    $subst = ' san gabriel valley ';
    $str = preg_replace($re, $subst, $str);
    
+   //sgv - san gabriel valley		
+   $re = '/\sinland\sempire\s/';
+   $subst = ' riverside county ';
+   $str = preg_replace($re, $subst, $str);
+
    //sfv - san fernando valley
    $re = '/\ssfv\s/';
    $subst = ' san fernando valley ';
@@ -866,52 +908,52 @@ function removeCityAppreviations($str)
    $re = '/\ssj\s/';
    $subst = ' san jose ';
    $str = preg_replace($re, $subst, $str);
-   
+
    //sf - san francisco
    $re = '/\ssf\s/';
    $subst = ' san francisco ';
    $str = preg_replace($re, $subst, $str);
-   
+
    //slo - san luis obispo
    $re = '/\sslo\s/';
    $subst = ' san luis obispo ';
    $str = preg_replace($re, $subst, $str);
-   
+
    //sb - santa barbara
    $re = '/\ssb\s/';
    $subst = ' santa barbara ';
    $str = preg_replace($re, $subst, $str);
-   
+
    //sac - sacramento
    $re = '/\ssac\s/';
    $subst = ' sacramento ';
    $str = preg_replace($re, $subst, $str);
-   
+
    //lb - long beach
    $re = '/\slb\s/';
    $subst = ' long beach ';
    $str = preg_replace($re, $subst, $str);
-   
+
    //oc - orange county
    $re = '/\soc\s/';
    $subst = ' orange county ';
    $str = preg_replace($re, $subst, $str);
-   
+
    //iv - isla vista
    $re = '/\siv\s/';
    $subst = ' isla vista ';
    $str = preg_replace($re, $subst, $str);
-   
+
    //sd - san diego
    $re = '/\ssd\s/';
    $subst = ' san diego ';
    $str = preg_replace($re, $subst, $str);
-   
+
    //tahoe - south lake tahoe
    //$re = '/\slatahoe\s/';
    //$subst = ' south lake tahoe ';
    //$str = preg_replace($re, $subst, $str);
-   
+
    //southbay
    $str = str_replace("south bay area",'south bay',$str);
    //east bay area - east bay
@@ -926,7 +968,7 @@ function removeCityAppreviations($str)
 }
 // Function for basic field validation (present and neither empty nor only white space
 function isNullOrEmptyString($question){
-       return (!isset($question) || trim($question)==='');
+   return (!isset($question) || trim($question)==='');
 }
 
 function removePunct($str)
@@ -957,23 +999,23 @@ function removePunct($str)
 
    //remove anything that is not letter, digit, slash, colon, or dollar sign
    $str = preg_replace('/[^a-z\:\$\d\/]+/i', ' ', $str);
-   
+
    //Any 4 $ together)
    $re = "/\\$\\$\\$\\$/"; 
    $subst = "\$"; 
    $str = preg_replace($re, $subst, $str);
-   
+
    //Any 3 $ together)
    $re = "/\\\$\\$\\$/"; 
    $subst = "\$"; 
    $str = preg_replace($re, $subst, $str);
-   
+
    //Any 2 $ together)
    $re = "/\\\$\\$/"; 
    $subst = "\$"; 
    $str = preg_replace($re, $subst, $str);
-   
-   
+
+
    //remove colon not between two numbers
    $re = '/(\D{1}):(\D{1})/';
    $subst = '$1 ';
@@ -985,7 +1027,7 @@ function cleanPost($str)
 {
    if(isNullOrEmptyString($str))
    {
-      echo 'String is empty';
+      echo 'Error: String is empty';
       return " ";
       //exit();
    }  
@@ -999,12 +1041,12 @@ function cleanPost($str)
    $re = "/\\d\\d\\d\\d/"; 
    $subst = ""; 
    $str = preg_replace($re, $subst, $str);
-   
+
    //Remove area codes and highways
-//   $re = "/\\d\\d\\d/"; 
-//   $subst = ""; 
- //  $str = preg_replace($re, $subst, $str);
-   
+   //   $re = "/\\d\\d\\d/"; 
+   //   $subst = ""; 
+   //  $str = preg_replace($re, $subst, $str);
+
    $str = replaceTo($str);
    $str = removeContractions($str);
    $str = removePunct($str);
