@@ -39,9 +39,9 @@ def getFeatures(words):
 def splitIntoFolds(lst, n):
     """Split lst into n chunks."""
     division = len(lst) / float(n)
-    return [lst[int(round(division * i)): int(round(division * (i + 1)))] for i in xrange(n)]
+    # return [lst[int(round(division * i)): int(round(division * (i + 1)))] for i in xrange(n)]
     # for python 3+
-    # return [lst[int(round(division * i)): int(round(division * (i + 1)))] for i in range(n)]
+    return [lst[int(round(division * i)): int(round(division * (i + 1)))] for i in range(n)]
 
 def evaluate(allData, numberOfFolds):
     """For cross-validation, we divide the data (|allData|) into N (|numberOfFolds|) subsets. Then we run each subset."""
@@ -71,7 +71,7 @@ def findInaccuracies(classy, test):
        if guess != tag:
           errors.append( (tag, guess, line) )
           for (tag, guess, line) in sorted(errors):
-             print "Correct = " + tag + " Guess = " + guess + " line = " + line
+             print("Correct = " + tag + " Guess = " + guess + " line = " + line)
 	     # print('correct={:<8} guess={:<8s} name={:<30}'.format(tag, guess, name))
 
 def run(test, train):
@@ -100,7 +100,7 @@ def main():
     # Every day I'm shuffling.
     random.shuffle(allData)
 
-    print "Total number of lines in training set: %d" % len(allData)
+    print("Total number of lines in training set: %d" % len(allData))
 
     getAllWords([instance[0] for instance in allData])
     evaluate(allData, numberOfFolds)
