@@ -1,4 +1,5 @@
 <?php
+#!/usr/bin/php
 
 require_once('config.php');
 require_once('cleanText.php');
@@ -55,7 +56,10 @@ function outputToScreen($postCount, $postId, $message, $createdTime){
    echo '<br>';
 }
 
-function storePostInDB($post_id, $message, $created_time, $mysqli)
+/**
+  * Store the post ID, content, and created time in the database
+*/
+function storePostInDB($postId, $message, $created_time, $mysqli)
 {
    
    /*
@@ -78,7 +82,7 @@ function storePostInDB($post_id, $message, $created_time, $mysqli)
    }
    
    /* Prepared statement, stage 2: bind */
-   if (!$stmt->bind_param("sss",$post_id, $message, $created_time)){	
+   if (!$stmt->bind_param("sss",$postId, $message, $created_time)){	
       echo "Binding parameters failed: (" . $stmt->errno . ") " . $stmt->error;
       return false;
    }	
@@ -98,14 +102,13 @@ function storePostInDB($post_id, $message, $created_time, $mysqli)
 	 }
       }
    }
-   echo "Successfully inserted. <br>";
    return true;
 
 }
 
-function getMoreInfo($fb, $post_id){
+function getMoreInfo($fb, $postId){
 
-   $requestString = '/' . $post_id;
+   $requestString = '/' . $postId;
    $request = $fb->request('GET', $requestString);
    $response = $fb->getClient()->sendRequest($request);
    $graphObject = $response->getGraphObject();
@@ -113,13 +116,14 @@ function getMoreInfo($fb, $post_id){
    echo '<br>';
 }
 
+/**
+  * Pull the important info from the post and output it to screen, file, and/or database
+*/
+function parsePost($postCount, $postData, $outputToScreenFlag,$outputToFileFlag,$myfile,$mysqli,$outputToDBFlag){
 
-function parsePost($fb, $postCount, $post,$outputToScreenFlag,$outputToFileFlag,$myfile,$mysqli,$outputToDBFlag){
-
-   $post_id = $post["id"];
-   //getMoreInfo($fb, $post_id); 
-   $message = $post["message"]; 
-   $updated_time = $post["updated_time"];
+   $post_id = $postData["id"];
+   $message = $postData["message"]; 
+   $updated_time = $postData["updated_time"];
    $created_time = $updated_time->format('Y-m-d H:i:s');
 
    //DO NOT DELETE, this is useful for debugging
@@ -141,25 +145,29 @@ function parsePost($fb, $postCount, $post,$outputToScreenFlag,$outputToFileFlag,
    }
 
 }
-
+/**
+* Make the request to Facebook for posts
+*/
 function handlePostsRequest($fb, $requestString,$myfile,$mysqli,$outputToFileFlag,$outputToScreenFlag,$outputToDBFlag)
 {
    try {
       $request = $fb->request('GET', $requestString);
       $response = $fb->getClient()->sendRequest($request);
       $pagesEdge = $response->getGraphEdge();
-      $pageCount = 0;
+      //$pageCount = 0;
       $postCount = 0;
 
       do {
 	 // Iterate over all the GraphNode's returned from the edge
 	 foreach ($pagesEdge as $page) {
-	    $post_data = $page->asArray();
-	    parsePost($fb, $postCount, $post_data,$outputToScreenFlag,$outputToFileFlag,$myfile,$mysqli,$outputToDBFlag);
+	    $postData = $page->asArray();
+	    parsePost($postCount, $postData,$outputToScreenFlag,$outputToFileFlag,$myfile,$mysqli,$outputToDBFlag);
+	    
+             //getMoreInfo($fb, $postData["id"]); 
 	    $postCount++;
 	    //var_dump($post_data);
 	 }
-	 $pageCount++;
+	 // $pageCount++;
 	 // Get the next page of results
       }while ($pagesEdge = $fb->next($pagesEdge));
       echo "Post Total: " . $postCount;
@@ -176,26 +184,29 @@ function handlePostsRequest($fb, $requestString,$myfile,$mysqli,$outputToFileFla
    return true;
 }
 /**
-  *
+  * Setup our request for posts from Facebook
   */
 function initPostsRequest($fb, $outputToScreenFlag,$outputToFileFlag,$outputToDBFlag)
 {
    //file descriptor
-   $myfile = NULL;
+   $fd = NULL;
 
    //mysql
    $mysqli = NULL;
    try {
+      if ($fb == NULL){
+	 throw new Exception('Facebook is null!');
+      }
       //get posts up until now
       if (($until = strtotime("now")) === false) {
 	 echo "The string ($str) is bogus";
-	 throw new Exception('timestamp is bogus');
+	 throw new Exception('Error: timestamp is bogus');
       }		
 
-      //get posts from 30 days ago
-      if (($since = strtotime("-30 day")) === false) {
+      //get posts from 90 days ago
+      if (($since = strtotime("-90 day")) === false) {
 	 echo "The string ($str) is bogus";
-	 throw new Exception('timestamp is bogus');
+	 throw new Exception('Error: timestamp is bogus');
       }
    } catch( Exception $e ) {
       // Any other error
@@ -204,8 +215,8 @@ function initPostsRequest($fb, $outputToScreenFlag,$outputToFileFlag,$outputToDB
    }
    if($outputToFileFlag){
       $name_of_file=date("Y:n:d:H:i:s")."_training.txt";
-      $fp = fopen($name_of_file, "a") or die("Unable to open file!");
-      if ( !$fp ) {
+      $fd = fopen($name_of_file, "a") or die("Unable to open file!");
+      if ( !$fd ) {
 	 $outputToFileFlag = false;
 	 echo '<p>Error: Unable to write to file</p>';
       }  
@@ -215,17 +226,16 @@ function initPostsRequest($fb, $outputToScreenFlag,$outputToFileFlag,$outputToDB
    }
    if($outputToDBFlag){
       $mysqli = new mysqli(HOST, USERNAME, PASSWORD, DATABASE_NAME);
-      if ($mysqli->connect_errno) 
-      {
+      if ($mysqli->connect_errno) {
 	 echo "Failed to connect to MySQL: (" . $mysqli->connect_errno . ") " . $mysqli->connect_error;
+         $outputToDBFlag = false;
       }
-      $outputToDBFlag = false;
    }
    //we only get 100 posts per page
    $requestString='/'. GROUP_ID .'/feed?limit=100&since='.$since;
-   if(handlePostsRequest($fb, $requestString, $fp, $mysqli, $outputToFileFlag, $outputToScreenFlag, $outputToDBFlag)){
+   if(handlePostsRequest($fb, $requestString, $fd, $mysqli, $outputToFileFlag, $outputToScreenFlag, $outputToDBFlag)){
       if($outputToFileFlag){
-	 fclose($fp);
+	 fclose($fd);
       }
       if($outputToDBFlag){
 	 $mysqli->close();
@@ -235,15 +245,15 @@ function initPostsRequest($fb, $outputToScreenFlag,$outputToFileFlag,$outputToDB
    return false;
 }
 
-function main() {
+function getPosts($fb) {
 
    if (isset($_SESSION['fb_access_token'])) {
       //do we want to output to a file
       $outputToFileFlag = false;
       //do we want to output to a database
-      $outputToDBFlag = false;
+      $outputToDBFlag = true;
       //do we want to output to the screen (for debugging purposes)
-      $outputToScreenFlag = true;
+      $outputToScreenFlag = false;
 
       try {
 	 if(initPostsRequest($fb, $outputToScreenFlag,$outputToFileFlag,$outputToDBFlag)) {
@@ -265,8 +275,4 @@ function main() {
       echo '<p>Please <a href=\'login.php\'>log in</a>';
    }
 }
-/**
- * Calls the main program function
- */
-main();
 ?>

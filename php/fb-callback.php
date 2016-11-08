@@ -1,6 +1,8 @@
 <?php
+#!/usr/bin/php
 require_once('config.php');
 require_once('cleanText.php');
+require_once('getPosts.php');
 require __DIR__ . '/vendor/autoload.php';
 use Facebook\FacebookSession;
 use Facebook\FacebookRedirectLoginHelper;
@@ -15,12 +17,12 @@ use Facebook\GraphUser;
 
 date_default_timezone_set("America/Los_Angeles");
 
+
 if (!session_id()) {
    session_start();
-   ini_set('session.use_strict_mode', 1);
-   $sid = md5(SESSION_ID_NUM);
-   session_id($sid);
-   session_start();
+#   ini_set('session.use_strict_mode', 1);
+#   $sid = md5(SESSION_ID_NUM);
+#   session_id($sid);
 }
 
 $fb = new Facebook\Facebook([
@@ -90,10 +92,8 @@ if (! $accessToken->isLongLived()) {
 $_SESSION['fb_access_token'] = (string) $accessToken;
 // Sets the default fallback access token so we don't have to pass it to each request
 $fb->setDefaultAccessToken((string) $accessToken);   
-
+getPosts($fb);
 // User is logged in with a long-lived access token.
 // You can redirect them to a members-only page.
-header(REDIRECT_MEMBERS_URL);
-}
-
+//header(REDIRECT_MEMBERS_URL);
 ?>

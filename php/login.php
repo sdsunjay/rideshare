@@ -1,4 +1,5 @@
 <?php
+#!/usr/bin/php
 require_once('config.php');
 require_once('cleanText.php');
 require __DIR__ . '/vendor/autoload.php';
@@ -11,14 +12,14 @@ use Facebook\FacebookRequestException;
 use Facebook\FacebookAuthorizationException;
 use Facebook\GraphObject;
 use Facebook\GraphUser;
-//Cali
+
 date_default_timezone_set("America/Los_Angeles");
 
 if (!session_id()) {
-   ini_set('session.use_strict_mode', 1);
-   $sid = md5(SESSION_ID_NUM);
-   session_id($sid);
    session_start();
+#   ini_set('session.use_strict_mode', 1);
+#   $sid = md5(SESSION_ID_NUM);
+#   session_id($sid);
 }
 
 // initialize your app using your key and secret

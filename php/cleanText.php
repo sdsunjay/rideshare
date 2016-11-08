@@ -755,17 +755,17 @@ function removeUniversityAbbreviations($str)
    $str = preg_replace($re, $subst, $str);
 
    //ucsb 
-   $re = '/\sucb\s/';
+   $re = '/\sucsb\s/';
    $subst = ' university of california santa barbara ';
    $str = preg_replace($re, $subst, $str);
 
-   //ucsb 
+   //ucd
    $re = '/\sucd\s/';
    $subst = ' university of california davis ';
    $str = preg_replace($re, $subst, $str);
    
    //uci
-   $re = '/\sucd\s/';
+   $re = '/\suci\s/';
    $subst = ' university of california irvine ';
    $str = preg_replace($re, $subst, $str);
 
