@@ -1,6 +1,6 @@
 <?php
 function matchTime($str){
-   $re = '/anytime|morning|lunch|noon|morning\snoon|afternoon|evening|afternoon\sevening|night|tonight|late|early\smorning/';
+   $re = '/anytime|morning|lunch|noon|morning\snoon|afternoon|evening|afternoon\sevening|night|tonight|\slate\s|early\smorning/';
    $str = preg_replace($re, "<\$TIME\$>", $str);
    $re = '/(?!\d{1,2}\/\d{1,2})\d{1,2}(\s)*(am|pm)*\sor\s\d{1,2}\s*(am|pm)*|(\d{1,2}:\d{1,2}(\s)*(am|pm)*)|(\d{1,2}(\s)*(am|pm)*)/';
    $str = preg_replace($re, "<\$TIME\$>", $str);
@@ -15,7 +15,7 @@ function matchQuantifier($str){
 }
 
 function matchDay($str){
-   $re = '/monday\s|mon\s|tuesday\s|tues\s|tue\s|weds\s|wednesday\s|wed\s|thursday\s|thurs\s|thur\s|friday\s|fri\s|saturday\s|sat\s|sunday\s|sun\s|today\s|tonight\s|tomorrow\s/';
+   $re = '/monday\s|\smon\s|tuesday\s|tues\s|tue\s|weds\s|wednesday\s|wed\s|thursday\s|thurs\s|thur\s|friday\s|fri\s|saturday\s|sat\s|sunday\s|sun\s|today\s|tonight\s|tomorrow\s/';
    $str = preg_replace($re, "<\$DAY\$> ", $str);
    return $str;
 }

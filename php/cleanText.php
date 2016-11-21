@@ -602,9 +602,15 @@ function removeSlang($str){
    $str = str_replace("ppl",'people',$str);
    $str = str_replace("fyi",'for your information',$str);
    $str = str_replace("btw",'by the way',$str);
+   $str = str_replace("tbd",'to be determined',$str);
+   $str = str_replace("tba",'to be determined',$str);
+   $str = str_replace("hmu",'hit me up',$str);
    $str = str_replace(" ty",' thank you',$str);
    $str = str_replace(" rn ",' right now ',$str);
+   $str = str_replace(" ca ",' california ',$str);
+   $str = str_replace("socal",'southern california',$str);
    $str = str_replace("ish",'',$str);
+   //$str = str_replace("approx",'approximately',$str);
    //WTH"	What The Hell
    //omg	Oh My God
    //"ty" "thank you"
@@ -847,23 +853,23 @@ function removeAirportAbbreviations($str){
    $str = str_replace("san francisco airport",'san francisco international airport',$str);
    
    //sfo
-   $re = '/\sfo\s/';
+   $re = '/\ssfo\s/';
    $subst = ' san francisco international airport ';
    $str = preg_replace($re, $subst, $str);
+   
+   //la airport - los angeles international  airport
+   $str = str_replace('los angeles airport','los angeles international airport',$str);
 
    //lax - los angeles international  airport
    $re = '/\slax\s/';
    $subst = ' los angeles international airport ';
    $str = preg_replace($re, $subst, $str);
 
-   //la airport - los angeles international  airport
-   $str = str_replace('los angeles airport','los angeles international airport',$str);
-
    //sj airport
    $str = str_replace('san jose airport','mineta san jose international airport',$str);
    
    //sjc - mineta san jose international airport 
-   $re = '/\sjc\s/';
+   $re = '/\ssjc\s/';
    $subst = ' mineta san jose international airport'; 
    $str = preg_replace($re, $subst, $str);
    
@@ -896,7 +902,7 @@ function removeAirportAbbreviations($str){
    $str = str_replace('san luis obispo airport','san luis obispo county regional airport',$str);
 
    //sbp - San Luis Obispo County Regional Airport
-   $re = '/\sbp\s/';
+   $re = '/\ssbp\s/';
    $subst = ' san luis obispo county regional airport ';
    $str = preg_replace($re, $subst, $str);
 
@@ -908,8 +914,8 @@ function removeCityAppreviations($str)
 {
 
    //Los Angeles
-   $re = '/\sla\s/';
-   $subst = ' los angeles ';
+   $re = '/la';
+   $subst = 'los angeles';
    $str = preg_replace($re, $subst, $str);
 
    //sgv - san gabriel valley		
@@ -928,48 +934,48 @@ function removeCityAppreviations($str)
    $str = preg_replace($re, $subst, $str);
 
    //sj - san jose
-   $re = '/\ssj\s/';
-   $subst = ' san jose ';
+   $re = '/sj';
+   $subst = 'san jose';
    $str = preg_replace($re, $subst, $str);
 
    //sf - san francisco
-   $re = '/\ssf\s/';
-   $subst = ' san francisco ';
+   $re = '/sf';
+   $subst = 'san francisco';
    $str = preg_replace($re, $subst, $str);
 
    //slo - san luis obispo
-   $re = '/\sslo\s/';
-   $subst = ' san luis obispo ';
+   $re = '/slo/J';
+   $subst = ' san luis obispo';
    $str = preg_replace($re, $subst, $str);
 
    //sb - santa barbara
-   $re = '/\ssb\s/';
-   $subst = ' santa barbara ';
+   $re = '/sb';
+   $subst = 'santa barbara';
    $str = preg_replace($re, $subst, $str);
 
    //sac - sacramento
-   $re = '/\ssac\s/';
-   $subst = ' sacramento ';
+   $re = '/sac';
+   $subst = 'sacramento';
    $str = preg_replace($re, $subst, $str);
 
    //lb - long beach
-   $re = '/\slb\s/';
-   $subst = ' long beach ';
+   $re = '/\slb';
+   $subst = ' long beach';
    $str = preg_replace($re, $subst, $str);
 
    //oc - orange county
-   $re = '/\soc\s/';
-   $subst = ' orange county ';
+   $re = '/oc';
+   $subst = 'orange county';
    $str = preg_replace($re, $subst, $str);
 
    //iv - isla vista
-   $re = '/\siv\s/';
-   $subst = ' isla vista ';
+   $re = '/iv';
+   $subst = 'isla vista';
    $str = preg_replace($re, $subst, $str);
 
    //sd - san diego
-   $re = '/\ssd\s/';
-   $subst = ' san diego ';
+   $re = '/sd';
+   $subst = 'san diego';
    $str = preg_replace($re, $subst, $str);
 
    //tahoe - south lake tahoe
@@ -1003,11 +1009,6 @@ function removePunct($str)
    $str = preg_replace('/\\b(\d+)(?:st|nd|rd|th)\\b/', '$1', $str);
 
    $str = str_replace("@", ' at ', $str);
-
-   //remove $# from string
-   //$re = "/\\$\\d*/"; 
-   //$subst = ""; 
-   //$str = preg_replace($re, $subst, $str);
 
    //this took forever to get right
    //remove slashes between words
