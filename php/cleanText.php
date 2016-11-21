@@ -824,6 +824,11 @@ function removeUniversityAbbreviations($str)
    $re = '/\ssdsu\s/';
    $subst = ' san diego state university ';
    $str = preg_replace($re, $subst, $str);
+   
+   //lmu
+   $re = '/\slmu\s/';
+   $subst = ' loyola marymount university ';
+   $str = preg_replace($re, $subst, $str);
 
    return $str;
 }

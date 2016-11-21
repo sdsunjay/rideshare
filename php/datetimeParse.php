@@ -15,7 +15,7 @@ function matchQuantifier($str){
 }
 
 function matchDay($str){
-   $re = '/monday\s|\smon\s|tuesday\s|tues\s|tue\s|weds\s|wednesday\s|wed\s|thursday\s|thurs\s|thur\s|friday\s|fri\s|saturday\s|sat\s|sunday\s|sun\s|today\s|tonight\s|tomorrow\s/';
+   $re = '/monday|\smon\s|tuesday|tues\s|tue\s|weds\s|wednesday|wed\s|thursday|thurs\s|thur\s|friday|fri\s|saturday|sat\s|sunday|sun\s|today|tonight|tomorrow/';
    $str = preg_replace($re, "<\$DAY\$> ", $str);
    return $str;
 }
