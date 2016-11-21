@@ -726,10 +726,25 @@ function removeHighways($str)
    $re = '/71/';
    $str = preg_replace($re, $subst, $str);
    
+   $re = '/126/';
+   $str = preg_replace($re, $subst, $str);
+   
    $re = '/hwy\s50/';
    $str = preg_replace($re, $subst, $str);
    
    $re = '/hwy\s5/';
+   $str = preg_replace($re, $subst, $str);
+   
+   $re = '/highway\s5/';
+   $str = preg_replace($re, $subst, $str);
+   
+   $re = '/i\s5/';
+   $str = preg_replace($re, $subst, $str);
+   
+   $re = '/freeway\s5/';
+   $str = preg_replace($re, $subst, $str);
+   
+   $re = '/the\s5/';
    $str = preg_replace($re, $subst, $str);
    
    $re = '/5\ssouth/';
@@ -744,6 +759,7 @@ function removeUniversityAbbreviations($str)
    //cal poly
    $str = str_replace("cal poly",'california polytechnic state university',$str);
    $str = str_replace("calpoly",'california polytechnic state university',$str);
+   $str = str_replace(" poly ",'california polytechnic state university',$str);
    
    //university of california
    $re = '/\suc\s/';
@@ -823,6 +839,11 @@ function removeUniversityAbbreviations($str)
    //sdsu
    $re = '/\ssdsu\s/';
    $subst = ' san diego state university ';
+   $str = preg_replace($re, $subst, $str);
+   
+   //sfsu
+   $re = '/\ssfsu\s/';
+   $subst = ' san francisco state university ';
    $str = preg_replace($re, $subst, $str);
    
    //lmu
@@ -937,6 +958,11 @@ function removeCityAppreviations($str)
    $re = '/\ssfv\s/';
    $subst = ' san fernando valley ';
    $str = preg_replace($re, $subst, $str);
+   
+   //scv - santa clarita valley
+   $re = '/\sscv\s/';
+   $subst = ' santa clarita valley ';
+   $str = preg_replace($re, $subst, $str);
 
    //sj - san jose
    $re = '/sj';
@@ -964,8 +990,10 @@ function removeCityAppreviations($str)
    $str = preg_replace($re, $subst, $str);
 
    //lb - long beach
-   $re = '/\slb';
    $subst = ' long beach';
+   $re = '/\slb';
+   $str = preg_replace($re, $subst, $str);
+   $re = '/\slbc';
    $str = preg_replace($re, $subst, $str);
 
    //oc - orange county
