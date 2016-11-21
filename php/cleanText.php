@@ -685,39 +685,39 @@ function replaceTo($str)
 function removeHighways($str)
 {
 
-   $subst = ' <$HIGHWAY$> ';
+   $subst = '<HIGHWAY>';
    
-   $re = '/\s101\s/';
+   $re = '/101/';
    $str = preg_replace($re, $subst, $str);
    
-   $re = '/\s405\s/';
+   $re = '/405/';
    $str = preg_replace($re, $subst, $str);
    
-   $re = '/\s680\s/';
+   $re = '/680/';
    $str = preg_replace($re, $subst, $str);
    
-   $re = '/\s880\s/';
+   $re = '/880/';
    $str = preg_replace($re, $subst, $str);
    
-   $re = '/\s80\s/';
+   $re = '/80/';
    $str = preg_replace($re, $subst, $str);
    
-   $re = '/\s134\s/';
+   $re = '/134/';
    $str = preg_replace($re, $subst, $str);
    
-   $re = '/\s210\s/';
+   $re = '/210/';
    $str = preg_replace($re, $subst, $str);
    
-   $re = '/\s280\s/';
+   $re = '/280/';
    $str = preg_replace($re, $subst, $str);
    
-   $re = '/\s85\s/';
+   $re = '/85/';
    $str = preg_replace($re, $subst, $str);
    
-   $re = '/\s87\s/';
+   $re = '/87/';
    $str = preg_replace($re, $subst, $str);
    
-   $re = '/\s71\s/';
+   $re = '/71/';
    $str = preg_replace($re, $subst, $str);
    
    $re = '/hwy\s50/';
@@ -813,12 +813,35 @@ function removeUniversityAbbreviations($str)
    $re = '/\ssjsu\s/';
    $subst = ' san jose state university ';
    $str = preg_replace($re, $subst, $str);
+   
+   //sdsu
+   $re = '/\ssdsu\s/';
+   $subst = ' san diego state university ';
+   $str = preg_replace($re, $subst, $str);
 
    return $str;
 }
 
-function removeAirportAbbreviations($str)
-{
+function removeDollars($str){
+   $subst = ' <DOLLAR> ';
+
+   #20$
+   $re = '/\d+\$/';
+   $str = preg_replace($re, $subst, $str);
+   
+   #$20
+   $re = '/\$\d+/';
+   $str = preg_replace($re, $subst, $str);
+   
+   $re = '/\$+/';
+   $str = preg_replace($re, $subst, $str);
+   
+   return $str;
+}
+
+
+
+function removeAirportAbbreviations($str){
 
    //sf airport
    $str = str_replace("san francisco airport",'san francisco international airport',$str);
@@ -1055,6 +1078,7 @@ function cleanPost($str)
    $str = removeAirportAbbreviations($str);
    $str = removeUniversityAbbreviations($str);
    $str = removeHighways($str);
+   $str = removeDollars($str);
 
    return $str;
 }

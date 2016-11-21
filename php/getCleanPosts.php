@@ -5,7 +5,7 @@ require_once('config.php');
 
 function helpInsertPostIntoClean($mysqli, $id, $cleaned_post, $table, $debugFlag){
 
-   if(!$cleaned_post){
+   if(empty($cleaned_post)){
       echo "<p>Error: Clean post is empty. </p>";
       return false;
    }
@@ -48,16 +48,16 @@ function helpInsertPostIntoClean($mysqli, $id, $cleaned_post, $table, $debugFlag
    return false;
 }
 
-function insertPostIntoCleanTable($mysqli,$debugFlag, $table){
+function insertPostIntoCleanTable($mysqli,$debugFlag, $selectTable, $insertTable){
 
    // Get 'dirty' posts
-   $query_string = "select id,message from " . POSTS_TABLE;
+   $query_string = "SELECT id,message FROM " . $selectTable;
    $i = 0;
    // Attempt select query execution
    if($result = mysqli_query($mysqli, $query_string)){
       if(mysqli_num_rows($result) > 0){
 	 while($row = mysqli_fetch_array($result)){
-	    if(!(helpInsertPostIntoClean($mysqli,$row["id"],cleanPost($row["message"]),$table,$debugFlag))){
+	    if(!(helpInsertPostIntoClean($mysqli, $row["id"], cleanPost($row["message"]), $insertTable, $debugFlag))){
 	       echo "<p>Error: with ".$i." record.</p>"; 
 	       break;
 	    }
@@ -75,16 +75,16 @@ function insertPostIntoCleanTable($mysqli,$debugFlag, $table){
       return false;
    }
 
-   echo "<p>Successfully inserted ". $i." posts into ".$table." </p>";
+   echo "<p>Successfully inserted ". $i." posts into ".$insertTable." </p>";
    // Close connection
    //mysqli_close($mysqli);	
    return true;
 }
 
-function removeOldPostsFromCleanTable(){
+function removeOldPostsFromCleanTable($table){
    mysql_connect(HOST,USERNAME,PASSWORD ) or die( mysql_error() );
    mysql_select_db(DATABASE_NAME) or die( mysql_error() );
-   return mysql_query( "DELETE FROM " . CLEAN_POSTS_TABLE); 
+   return mysql_query( "DELETE FROM " . $table); 
 }
 
 function insertPostIntoCleanDateTable($mysqli,$debugFlag){
@@ -126,11 +126,10 @@ $mysqli = new mysqli(HOST, USERNAME, PASSWORD, DATABASE_NAME);
 if ($mysqli->connect_errno) {
    echo "Failed to connect to MySQL: (" . $mysqli->connect_errno . ") " . $mysqli->connect_error;
 } else {
-   if(removeOldPostsFromCleanTable() != false){
-      if(insertPostIntoCleanTable($mysqli,$debugFlag, CLEAN_POSTS_TABLE)){
+   if(removeOldPostsFromCleanTable(CLEAN_POSTS_TABLE) != false){
+      if(insertPostIntoCleanTable($mysqli,$debugFlag, POSTS_TABLE, CLEAN_POSTS_TABLE)){
 	 insertPostIntoCleanDateTable($mysqli,$debugFlag);
       }
    }
 }
 ?>
-
