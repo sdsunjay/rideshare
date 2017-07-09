@@ -79,10 +79,11 @@ def run(test, train):
     trainingSet = nltk.classify.apply_features(getFeatures, train)
     testSet = nltk.classify.apply_features(getFeatures, test)
     classy = NaiveBayesClassifier.train(trainingSet)
+    # Show the posts which were classified incorrectly.
     # findInaccuracies(classy,test)
-    # classy.show_most_informative_features(10)
+    # Show the 100 most informative features
+    # classy.show_most_informative_features(100)
     return nltk.classify.accuracy(classy, testSet)
-
 
 def main():
     """The main function."""
@@ -106,4 +107,10 @@ def main():
     evaluate(allData, numberOfFolds)
 
 if __name__ == "__main__":
+    if os.path.exists('training_texts/seeking.txt') == False:
+        print('Training file (seeking.txt) not found in the app path.')
+        exit()
+    if os.path.exists('training_texts/offering.txt') == False:
+        print('Training file (offering.txt) not found in the app path.')
+        exit()
     main()
