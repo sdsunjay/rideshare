@@ -1,3 +1,4 @@
+import os.path
 import random
 import re
 from nltk.corpus import stopwords
@@ -85,16 +86,16 @@ def run(test, train):
     # classy.show_most_informative_features(100)
     return nltk.classify.accuracy(classy, testSet)
 
-def main():
+def main(seeking_filepath, offering_filepath):
     """The main function."""
     numberOfFolds = 10
     allData = []
 
-    with open('training_texts/seeking.txt', 'r') as f:
+    with open(seeking_filepath, 'r') as f:
         for line in f:
             allData.append((cleanText(line), 'seeking'))
 
-    with open('training_texts/offering.txt', 'r') as f:
+    with open(offering_filepath, 'r') as f:
         for line in f:
             allData.append((cleanText(line), 'offering'))
 
@@ -107,10 +108,12 @@ def main():
     evaluate(allData, numberOfFolds)
 
 if __name__ == "__main__":
-    if os.path.exists('training_texts/seeking.txt') == False:
+    seeking_filepath = 'training_texts/v2/seeking.txt'
+    offering_filepath = 'training_texts/v2/offering.txt'
+    if os.path.exists(seeking_filepath) == False:
         print('Training file (seeking.txt) not found in the app path.')
         exit()
-    if os.path.exists('training_texts/offering.txt') == False:
+    if os.path.exists(offering_filepath) == False:
         print('Training file (offering.txt) not found in the app path.')
         exit()
-    main()
+    main(seeking_filepath, offering_filepath)
