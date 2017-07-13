@@ -44,7 +44,7 @@ def splitIntoFolds(lst, n):
     # for python 3+
     return [lst[int(round(division * i)): int(round(division * (i + 1)))] for i in range(n)]
 
-def evaluate(allData, numberOfFolds):
+def evaluate(allData, numberOfFolds, debug):
     """For cross-validation, we divide the data (|allData|) into N (|numberOfFolds|) subsets. Then we run each subset."""
     accuracy = 0
     folds = splitIntoFolds(allData, numberOfFolds)
@@ -54,8 +54,10 @@ def evaluate(allData, numberOfFolds):
         training = folds[0:(i + 0)] + folds[(i + 1):]
         mergedTraining = [item for sublist in training for item in sublist]
         test = folds[i]
-
-        runAccuracy = run(test, mergedTraining)
+#       print("testing : ")
+#       for (tag, line) in test:
+        #    print(tag)
+        runAccuracy = run(test, mergedTraining, debug)
         print("Run %d (%d - %d) : %0.5f" %
               (i, startIndex, endIndex, runAccuracy))
         startIndex = len(folds[i]) + startIndex
@@ -71,17 +73,18 @@ def findInaccuracies(classy, test):
        guess = classy.classify(getFeatures(line))
        if guess != tag:
           errors.append( (tag, guess, line) )
-          for (tag, guess, line) in sorted(errors):
-             print("Correct = " + tag + " Guess = " + guess + " line = " + line)
-	     # print('correct={:<8} guess={:<8s} name={:<30}'.format(tag, guess, name))
+    for (tag, guess, line) in sorted(errors):
+        print("Correct = " + tag + " Guess = " + guess + " line = " + line)
+     # print('correct={:<8} guess={:<8s} name={:<30}'.format(tag, guess, name))
 
-def run(test, train):
+def run(test, train, debug):
     """Convert list of tuples into list of features (first dict of features, then LazyMap of features). Each argument is a list of strings."""
     trainingSet = nltk.classify.apply_features(getFeatures, train)
     testSet = nltk.classify.apply_features(getFeatures, test)
     classy = NaiveBayesClassifier.train(trainingSet)
-    # Show the posts which were classified incorrectly.
-    # findInaccuracies(classy,test)
+    if debug:
+        # Show the posts which were classified incorrectly.
+        findInaccuracies(classy,test)
     # Show the 100 most informative features
     # classy.show_most_informative_features(100)
     return nltk.classify.accuracy(classy, testSet)
@@ -89,6 +92,7 @@ def run(test, train):
 def main(seeking_filepath, offering_filepath):
     """The main function."""
     numberOfFolds = 10
+    debug = True 
     allData = []
 
     with open(seeking_filepath, 'r') as f:
@@ -105,11 +109,11 @@ def main(seeking_filepath, offering_filepath):
     print("Total number of lines in training set: %d" % len(allData))
 
     getAllWords([instance[0] for instance in allData])
-    evaluate(allData, numberOfFolds)
+    evaluate(allData, numberOfFolds, debug)
 
 if __name__ == "__main__":
-    seeking_filepath = 'training_texts/v2/seeking.txt'
-    offering_filepath = 'training_texts/v2/offering.txt'
+    seeking_filepath = 'training_texts/v2/small_seeking.txt'
+    offering_filepath = 'training_texts/v2/small_offering.txt'
     if os.path.exists(seeking_filepath) == False:
         print('Training file (seeking.txt) not found in the app path.')
         exit()
