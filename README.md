@@ -18,9 +18,10 @@ If you want to run this program, then you need to make sure to create a config.p
   
 
 ### Python
-The Python directory hold the code for training, testing, and classifiying the posts. We are using the naive bayes algorithm from the NLTK library and k nearest neighbor from sklearn library. We are using Python 3.
+The Python directory hold the code for training, testing, and classifiying the posts. We are using the naive bayes algorithm from the NLTK library and k nearest neighbor from sklearn library. We are using Python 3. You will need to install [NLTK Data - Stopwords Corpus](http://www.nltk.org/data.html)
 #### Running
 ``` shell
+$ pip install -r requirements.txt
 $ python classifier.py
 ```
 
