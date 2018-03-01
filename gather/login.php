@@ -1,4 +1,5 @@
 <?php
+# Get new posts from Facebook
 #!/usr/bin/php
 require_once('config.php');
 require_once('cleanText.php');
