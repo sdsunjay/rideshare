@@ -63,38 +63,3 @@ def insertNewPostIntoLocationTable(con,post_id,post,place_id,location_num,locati
 #   print x
 #testSent = 'I am in oakland'
 # testSent1 = "https//www google com maps dir seattle wa san luis obispo ca at 41 3 to 8 5z data 3m1 4b1 4m14 4m13 1m5 1m1 1s0x2c93e550xd59a 2m2 1d to 8 2d47 5 1m5 1m1 1s0x80ece6be7b6cc0xbc0c2ceef0f46 2m2 1d to 6 2d35 4 3e0 will be driving from seattle to slo the weekend before wow week willing to pick anyone up along the way would love some company on this long drive hit me up "
-def removeCities(con,post_id,post):
-   print post+"\n"
-   num = 0
-   i = 0
-   finalString = ''
-   words = post.split()
-   city_num = 0
-   temp = -1 
-   for i in range(0,len(words)):
-      if words[i] in hashmapList[num]:
-#	 print 'Exists!'
-	 # print "Original: "+words[i]+"\n"
-         temp =  hashmapList[num][words[i]]
-	 #print str(temp)+"\n"
-	 # if not ending word
-	 if temp == 1:
-	    num+=1
-	 # if ending word
-	 elif temp >= 1:
-	    city_num+=1
-	    finalString+='LOCATION '
-	   # print "Replace city in "+str(city_num)+" location"+"\n"+"String so far is: "+finalString
-	    insertNewPostIntoLocationTable(con,str(post_id),finalString,str(temp),str(city_num),str(Locations.Cities))
-	    num = 0
-      else:
-	 num = 0
-	 finalString+=words[i]+' '
-  # print "Final String: "+finalString
-#   update clean_locations_posts set post=finalString where pid=post_id
-  cursor = con.cursor()
-  cursor.execute ("""
-	    UPDATE clean_locations_posts
-	       SET post=%s
-		  WHERE pid=%s
-		  """, (finalString, str(post_id)))
